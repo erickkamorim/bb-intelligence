@@ -1,0 +1,22 @@
+name: etl-agendado
+# Desligado até a Etapa 4: exige DATABASE_URL de produção nos secrets do repositório.
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "17 9 * * 1-5"   # 06h17 BRT, dias úteis
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - run: alembic upgrade head && python -m etl seed
+      - run: python -m etl cvm load --doc ITR --year $(date +%Y)
+      - run: python -m etl sgs load --indicator selic_meta --start 2016-01-01
+      - run: python -m etl sgs load --indicator ipca_mensal --start 2016-01-01
+      - run: python -m etl quality
