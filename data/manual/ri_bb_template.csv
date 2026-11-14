@@ -1,0 +1,5 @@
+# Curadoria manual de indicadores gerenciais do RI do Banco do Brasil.
+# Cada linha precisa apontar para o documento oficial (ri.bb.com.br ou api.mziq.com) e para a página/aba exata.
+# Valores: ponto decimal; BRL em reais (não em bilhões); pct como número (21.6 = 21,6%).
+# Copie este arquivo para ri_bb.csv e preencha a partir do release. Não preencha com estimativas.
+indicator_code,period,value,unit,source_url,source_locator,published_at,collected_by

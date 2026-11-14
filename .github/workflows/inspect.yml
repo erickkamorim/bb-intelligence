@@ -1,0 +1,25 @@
+name: inspecionar-cvm
+# Roda pelo celular: Actions → inspecionar-cvm → Run workflow.
+# Baixa o ZIP da CVM nos servidores do GitHub e lista as contas do BB no log.
+on:
+  workflow_dispatch:
+    inputs:
+      doc: { description: "ITR ou DFP", default: "ITR", type: choice, options: [ITR, DFP] }
+      year: { description: "Ano", default: "2026" }
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - name: DRE
+        run: python -m etl cvm inspect --doc ${{ inputs.doc }} --year ${{ inputs.year }} --statement DRE
+      - name: BPA (ativo)
+        run: python -m etl cvm inspect --doc ${{ inputs.doc }} --year ${{ inputs.year }} --statement BPA --level 1
+      - name: BPP (passivo e PL)
+        run: python -m etl cvm inspect --doc ${{ inputs.doc }} --year ${{ inputs.year }} --statement BPP --level 2
+      - name: Selic (teste da API do BCB)
+        run: curl -sS "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/2?formato=json"
