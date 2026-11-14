@@ -15,6 +15,8 @@ class Base(DeclarativeBase):
 
 
 JsonType = JSON().with_variant(JSONB(), "postgresql")
+# BIGSERIAL no PostgreSQL; INTEGER no SQLite (necessário para autoincremento nos testes)
+BigId = BigInteger().with_variant(Integer(), "sqlite")
 
 
 class Source(Base):
@@ -59,7 +61,7 @@ class Observation(Base):
                          "revision", name="uq_observation_revision"),
         Index("ix_obs_indicator_period", "indicator_id", "period_end"),
     )
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigId, primary_key=True)
     indicator_id: Mapped[int] = mapped_column(ForeignKey("indicators.id"))
     period_start: Mapped[date | None] = mapped_column(Date)
     period_end: Mapped[date] = mapped_column(Date)
@@ -78,7 +80,7 @@ class Observation(Base):
 class MarketPrice(Base):
     __tablename__ = "market_prices"
     __table_args__ = (UniqueConstraint("ticker", "trade_date", "source_id", name="uq_market_price"),)
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigId, primary_key=True)
     ticker: Mapped[str] = mapped_column(String(12))
     trade_date: Mapped[date] = mapped_column(Date)
     close: Mapped[float | None] = mapped_column(Numeric(18, 6))
