@@ -115,7 +115,10 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     else:
         out["DT_INI_EXERC"] = pd.Series([None] * len(out), index=out.index, dtype=object)
 
-    out["value"] = pd.to_numeric(out["VL_CONTA"], errors="raise") * escala.map(SCALE).loc[out.index]
+    # Lucro por ação (3.99.*) vem em R$/ação e NÃO deve receber a escala MIL da demonstração
+    per_share = out["CD_CONTA"].str.startswith("3.99")
+    factor = escala.map(SCALE).loc[out.index].where(~per_share, 1)
+    out["value"] = pd.to_numeric(out["VL_CONTA"], errors="raise") * factor
 
     # Reapresentações: mantém só a maior VERSAO por data de referência
     max_ver = out.groupby("DT_REFER")["VERSAO"].transform("max")

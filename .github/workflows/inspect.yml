@@ -6,6 +6,7 @@ on:
     inputs:
       doc: { description: "ITR ou DFP", default: "ITR", type: choice, options: [ITR, DFP] }
       year: { description: "Ano", default: "2026" }
+      level: { description: "Níveis da DRE (3 mostra controladores)", default: "3" }
 jobs:
   inspect:
     runs-on: ubuntu-latest
@@ -16,7 +17,7 @@ jobs:
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt
       - name: DRE
-        run: python -m etl cvm inspect --doc ${{ inputs.doc }} --year ${{ inputs.year }} --statement DRE
+        run: python -m etl cvm inspect --doc ${{ inputs.doc }} --year ${{ inputs.year }} --statement DRE --level ${{ inputs.level }}
       - name: BPA (ativo)
         run: python -m etl cvm inspect --doc ${{ inputs.doc }} --year ${{ inputs.year }} --statement BPA --level 1
       - name: BPP (passivo e PL)
