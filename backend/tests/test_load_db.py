@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session  # noqa: E402
 
 from app.db.models import Base, EtlRun, Observation  # noqa: E402
 from etl import cvm  # noqa: E402
-from etl.load import ObsIn, etl_run, get_or_create_document, seed, upsert_observations  # noqa: E402
+from etl.load import (ObsIn, derive_fourth_quarter, etl_run, get_or_create_document, seed,  # noqa: E402
+                      upsert_observations)
 from etl.registry import INDICATORS  # noqa: E402
 
 pytestmark = pytest.mark.db
@@ -56,3 +57,17 @@ def test_etl_run_records_failure(session):
             raise RuntimeError("falha simulada")
     run = session.scalars(select(EtlRun)).one()
     assert run.status == "failed" and "falha simulada" in run.error_message
+
+
+def test_derive_fourth_quarter(session):
+    # valores FICTÍCIOS
+    doc = _doc(session)
+    upsert_observations(session, doc, [
+        ObsIn("lucro_liquido_contabil", date(2025, 1, 1), date(2025, 9, 30), "ytd", 300.0),
+        ObsIn("lucro_liquido_contabil", date(2025, 1, 1), date(2025, 12, 31), "fy", 410.0),
+    ])
+    assert derive_fourth_quarter(session, 2025) == 1
+    q4 = session.scalars(select(Observation).where(Observation.period_end == date(2025, 12, 31),
+                                                   Observation.period_type == "quarter")).one()
+    assert float(q4.value) == 110.0 and q4.derivation.startswith("derived:")
+    assert derive_fourth_quarter(session, 2025) == 0  # idempotente

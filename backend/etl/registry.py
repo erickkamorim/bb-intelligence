@@ -123,7 +123,8 @@ INDICATORS: dict[str, Indicator] = {
         definition="Parcela do lucro consolidado atribuída aos acionistas controladores.",
         scope="consolidado",
         source="cvm_itr",
-        cvm=CvmAccount("DRE", "3.11.01", r"controlador", confirmed=False),
+        cvm=CvmAccount("DRE", "3.11.01", r"controlador", confirmed=True,
+                       evidence="cvm inspect ITR 2025 e 2026 em 14/11/2026: 3.11.01 = 'Atribuído aos Sócios da Empresa Controladora'; 3.11.01 + 3.11.02 = 3.11."),
     ),
     "ativo_total": Indicator(
         code="ativo_total",

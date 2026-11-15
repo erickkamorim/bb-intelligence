@@ -41,7 +41,8 @@ def test_extract_quarter_and_ytd(itr_zip):
 
 def test_unconfirmed_mapping_is_blocked(itr_zip):
     df = cvm.normalize(cvm.read_statement(itr_zip, "DRE"))
-    ind = INDICATORS["lucro_liquido_controladores"]
+    base = INDICATORS["lucro_liquido_controladores"]
+    ind = dataclasses.replace(base, cvm=dataclasses.replace(base.cvm, confirmed=False))
     with pytest.raises(ValueError, match="não confirmado"):
         cvm.extract(df, ind)
     assert len(cvm.extract(df, ind, allow_unconfirmed=True)) == 1

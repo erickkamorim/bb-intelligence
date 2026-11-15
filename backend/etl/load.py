@@ -14,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.models import Document, EtlRun, IndicatorModel, Observation, Source
+from .periods import derive_q4
 from .registry import INDICATORS, SOURCES
 
 
@@ -124,3 +125,38 @@ def coverage(session: Session) -> list[dict]:
          .join(Observation, Observation.indicator_id == IndicatorModel.id, isouter=True)
          .group_by(IndicatorModel.code).order_by(IndicatorModel.code))
     return [dict(indicator=c, n=n, first=f, last=l, retrieved=rt) for c, n, f, l, rt in session.execute(q)]
+
+
+def derive_fourth_quarter(session: Session, year: int) -> int:
+    """Cria o 4T isolado = exercício (DFP, fy) − acumulado 9M (ITR, ytd em 30/09).
+
+    Só para indicadores de resultado (DRE). A observação fica marcada em `derivation`
+    e aponta para o documento da DFP. Retorna quantas linhas foram inseridas/revisadas.
+    """
+    from datetime import date as _d
+    total = 0
+    for ind in INDICATORS.values():
+        if ind.cvm is None or ind.cvm.statement != "DRE":
+            continue
+        im = session.scalar(select(IndicatorModel).where(IndicatorModel.code == ind.code))
+        if im is None:
+            continue
+
+        def latest(period_type: str, start, end):
+            return session.scalar(select(Observation).where(
+                Observation.indicator_id == im.id, Observation.period_type == period_type,
+                Observation.period_start == start, Observation.period_end == end,
+            ).order_by(Observation.revision.desc()).limit(1))
+
+        fy = latest("fy", _d(year, 1, 1), _d(year, 12, 31))
+        ytd9 = latest("ytd", _d(year, 1, 1), _d(year, 9, 30))
+        if fy is None or ytd9 is None:
+            continue
+        d = derive_q4(float(fy.value), float(ytd9.value))
+        doc = session.get(Document, fy.source_document_id)
+        i, r = upsert_observations(session, doc, [ObsIn(
+            ind.code, _d(year, 10, 1), _d(year, 12, 31), "quarter", d.value,
+            published_at=fy.published_at, derivation=d.method,
+            extra={"fy_obs_id": fy.id, "ytd9_obs_id": ytd9.id})])
+        total += i + r
+    return total

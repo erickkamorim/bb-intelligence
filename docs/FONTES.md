@@ -22,7 +22,8 @@ Verificação feita por consulta aos portais oficiais. **Nenhuma chamada real fo
 
 - `3.11` — lucro/prejuízo consolidado do período: usado para o CNPJ do BB a partir de 2020 (antes de 2020 era `3.09`). **Confirmado** por referência externa e protegido por regex na descrição.
 - Confirmados em 14/11/2026 pelo workflow `inspecionar-cvm` (ITR 2026): `3.11` lucro consolidado, `1` ativo total (BPA), `2.07` patrimônio líquido consolidado (BPP). A soma 1T+2T de `3.11` bate com o acumulado do semestre.
-- `3.11.01` (controladores): pendente; rodar o workflow com nível 3.
+- `3.11.01` (controladores) confirmado com ITR 2025 e 2026; mesmo plano de contas nos dois anos.
+- ITR 2025 na CVM: 1T, 2T e 3T. O 4T25 sai da DFP 2025 menos o acumulado de 9 meses.
 - O ITR 2026 publicado na CVM traz 1T e 2T; o 3T ainda não constava no arquivo em 14/11/2026.
 - Conta `3.99` (lucro por ação) vem em R$/ação e não recebe a escala MIL.
 - A série SGS 432 (meta Selic) traz datas futuras, até a próxima reunião do Copom: a última data da série não é "hoje".
