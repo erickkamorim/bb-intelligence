@@ -279,7 +279,8 @@ def alerts(db: Session, period: str) -> list[dict]:
             continue
         meta = INDICATORS[code]
         cur, o, d, s = vals[end]
-        hist = [v for e, (v, *_rest) in vals.items() if e <= end]
+        hist = [abs(v) if code in COST else v for e, (v, *_rest) in vals.items() if e <= end]
+        cur_cmp = abs(cur) if code in COST else cur
         for ref, label in ((prev_q, "t/t"), (prev_y, "a/a")):
             if ref not in vals:
                 continue
@@ -298,10 +299,11 @@ def alerts(db: Session, period: str) -> list[dict]:
             good = rising == up_good
             extreme = None
             if len(hist) >= 3:
-                if cur == max(hist):
-                    extreme = "maior valor da série carregada"
-                elif cur == min(hist):
-                    extreme = "menor valor da série carregada"
+                noun = "maior custo" if code in COST else "maior valor"
+                if cur_cmp == max(hist):
+                    extreme = f"{noun} da série carregada"
+                elif cur_cmp == min(hist):
+                    extreme = ("menor custo" if code in COST else "menor valor") + " da série carregada"
             out.append({"code": code, "name": meta.name, "unit": meta.unit, "value": cur, "compare": label,
                         "compare_period": period_code(ref), "delta": round(delta, 2), "delta_unit": unit,
                         "direction": "up" if rising else "down", "tone": "positive" if good else "negative",

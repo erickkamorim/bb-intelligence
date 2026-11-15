@@ -63,7 +63,7 @@ export function BridgeChart({ data, toLabel }: { data: Bridge; toLabel: string }
               <text x={x(t * 1e9)} y={H - 6} textAnchor="middle" className="tick">{number(t, Number.isInteger(t) ? 0 : 1)}</text>
             </g>
           ))}
-          <text x={W - PADR} y={H - 6} textAnchor="start" className="tick">  R$ bi</text>
+          <text x={LBL - 10} y={H - 6} textAnchor="end" className="tick">R$ bi</text>
           {rows.map((r, i) => {
             const y = TOP + i * ROW;
             const x0 = x(Math.min(r.a, r.b)), x1 = x(Math.max(r.a, r.b));
