@@ -113,7 +113,7 @@ INDICATORS: dict[str, Indicator] = {
         scope="consolidado",
         source="cvm_itr",
         cvm=CvmAccount("DRE", "3.11", r"lucro|preju", confirmed=True,
-                       evidence="Conta 3.11 usada para o CNPJ do BB a partir de 2020 (biblioteca cvm-sqlite)."),
+                       evidence="cvm inspect ITR 2026 em 14/11/2026: 3.11 = 'Lucro ou Prejuízo Líquido Consolidado do Período'; soma 1T+2T = acumulado."),
     ),
     "lucro_liquido_controladores": Indicator(
         code="lucro_liquido_controladores",
@@ -133,7 +133,8 @@ INDICATORS: dict[str, Indicator] = {
         definition="Saldo do ativo total no balanço patrimonial consolidado na data de referência.",
         scope="consolidado",
         source="cvm_itr",
-        cvm=CvmAccount("BPA", "1", r"ativo total", confirmed=False),
+        cvm=CvmAccount("BPA", "1", r"ativo total", confirmed=True,
+                       evidence="cvm inspect ITR 2026 em 14/11/2026: conta 1 = 'Ativo Total'."),
     ),
     "patrimonio_liquido": Indicator(
         code="patrimonio_liquido",
@@ -143,7 +144,8 @@ INDICATORS: dict[str, Indicator] = {
         definition="Patrimônio líquido consolidado na data de referência.",
         scope="consolidado",
         source="cvm_itr",
-        cvm=CvmAccount("BPP", None, r"patrim[oô]nio l[ií]quido", confirmed=False),
+        cvm=CvmAccount("BPP", "2.07", r"patrim[oô]nio l[ií]quido consolidado", confirmed=True,
+                       evidence="cvm inspect ITR 2026 em 14/11/2026: conta 2.07 = 'Patrimônio Líquido Consolidado' (inclui minoritários)."),
     ),
     # ---- Gerencial (RI, curadoria manual) -------------------------------
     "lucro_liquido_ajustado": Indicator(

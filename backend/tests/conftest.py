@@ -27,6 +27,7 @@ def _dre_rows():
     r.append(_row(BB, "2026-06-30", 1, "ÚLTIMO", "2026-04-01", "2026-06-30", "3.11", "Lucro ou Prejuízo Líquido Consolidado do Período", "1200000"))
     r.append(_row(BB, "2026-06-30", 1, "ÚLTIMO", "2026-01-01", "2026-06-30", "3.11", "Lucro ou Prejuízo Líquido Consolidado do Período", "2300000"))
     r.append(_row(BB, "2026-06-30", 1, "ÚLTIMO", "2026-04-01", "2026-06-30", "3.11.01", "Atribuído a Sócios da Empresa Controladora", "1150000"))
+    r.append(_row(BB, "2026-06-30", 1, "ÚLTIMO", "2026-04-01", "2026-06-30", "3.99", "Lucro por Ação (R$/Ação)", "0.42"))
     # Outra companhia deve ser descartada
     r.append(_row(OUTRA, "2026-06-30", 1, "ÚLTIMO", "2026-04-01", "2026-06-30", "3.11", "Lucro", "5"))
     return r

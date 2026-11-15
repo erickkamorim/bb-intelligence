@@ -75,3 +75,8 @@ def test_missing_columns_is_explicit_error(tmp_path):
         zf.writestr("itr_cia_aberta_DRE_con_2026.csv", "CNPJ_CIA;VL_CONTA\n")
     with pytest.raises(cvm.CvmFormatError, match="Colunas ausentes"):
         cvm.read_statement(p, "DRE")
+
+
+def test_earnings_per_share_is_not_scaled(itr_zip):
+    df = cvm.normalize(cvm.read_statement(itr_zip, "DRE"))
+    assert df[df["CD_CONTA"] == "3.99"].iloc[0]["value"] == 0.42
