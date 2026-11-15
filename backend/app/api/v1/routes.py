@@ -63,6 +63,7 @@ def series(code: str,
            from_: date | None = Query(None, alias="from"),
            to: date | None = Query(None),
            period_type: str | None = Query(None, description="quarter | ytd | fy | instant | daily | monthly"),
+           compact: bool = Query(False, description="Só data e valor por ponto; a fonte do último ponto vai em meta"),
            db: Session = Depends(get_db)):
     meta = INDICATORS.get(code)
     ind = q.indicator_by_code(db, code) if meta else None
@@ -74,11 +75,15 @@ def series(code: str,
         else:
             period_type = "instant" if (meta.cvm and meta.cvm.statement in {"BPA", "BPP"}) else "quarter"
     rows = q.observations(db, ind, period_type=period_type, start=from_, end=to)
-    points = [{"period_start": o.period_start, "period_end": o.period_end, "value": float(o.value),
-               **q.source_meta(o, d, s)} for o, d, s in rows]
+    if compact:
+        points = [{"period_end": o.period_end, "value": float(o.value)} for o, _d, _s in rows]
+    else:
+        points = [{"period_start": o.period_start, "period_end": o.period_end, "value": float(o.value),
+                   **q.source_meta(o, d, s)} for o, d, s in rows]
+    extra = {"source": q.source_meta(*rows[-1])} if (compact and rows) else {}
     return envelope(points, indicator={"code": code, "name": meta.name, "unit": meta.unit, "scope": meta.scope,
                                        "definition": meta.definition, "period_type": period_type},
-                    count=len(points), status="ok" if points else "missing")
+                    count=len(points), status="ok" if points else "missing", **extra)
 
 
 @router.get("/credit/segments")

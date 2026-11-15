@@ -40,7 +40,7 @@ export interface PeriodItem {
 }
 
 export interface SeriesPoint extends SourceMeta {
-  period_start: string | null;
+  period_start?: string | null;
   period_end: string;
   value: number;
 }
