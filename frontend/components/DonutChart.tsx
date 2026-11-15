@@ -1,4 +1,4 @@
-import { brl, number, sourceLine } from "@/lib/format";
+import { brl, number, sourceLine, sourceShort } from "@/lib/format";
 import type { CreditSegments } from "@/lib/types";
 
 // Paleta categórica validada (CVD e normal) para 3 séries; "Outros" é neutro.
@@ -47,7 +47,7 @@ export function DonutChart({ data }: { data: CreditSegments }) {
       </ul>
       {data.total_source && (
         <p className="chart-note">
-          {sourceLine(data.total_source)}. *Outros = carteira expandida menos PF, PJ e Agro (inclui carteira externa).
+          <span title={sourceLine(data.total_source)}>Fonte: {sourceShort(data.total_source)}</span>. *Outros = carteira expandida menos PF, PJ e Agro (inclui carteira externa).
         </p>
       )}
     </div>

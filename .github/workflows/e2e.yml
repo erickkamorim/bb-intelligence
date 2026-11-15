@@ -52,7 +52,8 @@ jobs:
           for (const [name, w, h, path] of shots) {
             const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: w < 500 ? 2 : 1 });
             await p.goto("http://127.0.0.1:3000" + path, { waitUntil: "networkidle" });
-            if (name === "desktop-recolhido") await p.click(".collapse-btn");
+            if (name === "desktop-recolhido") { await p.click(".collapse-btn"); await p.waitForTimeout(400); }
+            if (w > 900) console.log(name, "largura do menu:", await p.$eval(".sidebar", (e) => e.getBoundingClientRect().width));
             await p.screenshot({ path: `${name}.png`, fullPage: true });
             await p.screenshot({ path: `${name}.jpg`, fullPage: true, type: "jpeg", quality: 60 });
           }

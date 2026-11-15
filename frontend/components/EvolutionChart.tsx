@@ -14,12 +14,16 @@ const INK2 = "#4A5568";
 type Mode = "q" | "y";
 interface Col { key: string; label: string; profit?: number; roe?: number; complete: boolean; src?: SeriesPoint }
 
-function niceMax(v: number): number {
-  if (v <= 0) return 1;
-  const p = 10 ** Math.floor(Math.log10(v));
-  const n = v / p;
-  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+/** Escala com 4 intervalos "redondos": devolve [máximo, passo]. */
+function niceScale(v: number): [number, number] {
+  const raw = Math.max(v, 1e-9) / 4;
+  const p = 10 ** Math.floor(Math.log10(raw));
+  const n = raw / p;
+  const step = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+  return [step * Math.ceil(v / step), step];
 }
+const ticksOf = ([max, step]: [number, number]) =>
+  Array.from({ length: Math.round(max / step) + 1 }, (_, i) => i * step);
 
 function quarterEnds(first: string, last: string): string[] {
   const out: string[] = [];
@@ -69,13 +73,15 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
   const plotW = W - PADL - PADR;
   const band = plotW / cols.length;
   const barW = Math.min(24, band * 0.5);
-  const pMax = niceMax(Math.max(...cols.map((c) => (c.profit ?? 0) / 1e9), 0.1));
-  const pTicks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * pMax);
+  const pScale = niceScale(Math.max(...cols.map((c) => (c.profit ?? 0) / 1e9), 0.1));
+  const pMax = pScale[0];
+  const pTicks = ticksOf(pScale);
   const yP = (v: number) => TOP + H1 - (v / pMax) * H1;
   const showRoe = mode === "q";
   const rVals = cols.map((c) => c.roe).filter((v): v is number => v !== undefined);
-  const rMax = niceMax(Math.max(...rVals, 1));
-  const rTicks = [0, 0.5, 1].map((f) => f * rMax);
+  const rScale = niceScale(Math.max(...rVals, 1) * 1.15);
+  const rMax = rScale[0];
+  const rTicks = ticksOf(rScale).filter((_, i, a) => a.length <= 4 || i % 2 === 0 || i === a.length - 1);
   const top2 = TOP + H1 + GAP + 14;
   const yR = (v: number) => top2 + H2 - (v / rMax) * H2;
   const cx = (i: number) => PADL + band * i + band / 2;
@@ -121,7 +127,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
           {pTicks.map((t) => (
             <g key={`p${t}`}>
               <line x1={PADL} x2={W - PADR} y1={yP(t)} y2={yP(t)} stroke={GRID} />
-              <text x={PADL - 8} y={yP(t) + 4} textAnchor="end" className="tick">{number(t, 1)}</text>
+              <text x={PADL - 8} y={yP(t) + 4} textAnchor="end" className="tick">{number(t, Number.isInteger(t) ? 0 : 1)}</text>
             </g>
           ))}
           {cols.map((c, i) => {
@@ -162,7 +168,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
                   <circle cx={cx(i)} cy={yR(c.roe)} r={6} fill="#fff" />
                   <circle cx={cx(i)} cy={yR(c.roe)} r={4} fill={LINE} />
                   {i === cols.length - 1 && (
-                    <text x={cx(i)} y={yR(c.roe) - 10} textAnchor="middle" className="value-label">{number(c.roe, 1)}%</text>
+                    <text x={cx(i)} y={yR(c.roe) + 20} textAnchor="middle" className="value-label">{number(c.roe, 1)}%</text>
                   )}
                 </g>
               ))}

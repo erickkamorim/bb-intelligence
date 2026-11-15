@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Delta, IndicatorItem } from "@/lib/types";
-import { number, sourceLine, value } from "@/lib/format";
+import { number, sourceLine, sourceShort, value } from "@/lib/format";
 import { IconArrowDown, IconArrowUp } from "./Icons";
 
 function DeltaChip({ d, label, higherIsBetter = true }: { d: Delta; label: string; higherIsBetter?: boolean }) {
@@ -36,7 +36,7 @@ export function KpiCard({ item, icon, higherIsBetter = true, note }: {
             {item.yoy && <DeltaChip d={item.yoy} label="a/a" higherIsBetter={higherIsBetter} />}
             {item.qoq && <DeltaChip d={item.qoq} label="t/t" higherIsBetter={higherIsBetter} />}
           </div>
-          <p className="kpi-source" title={item.definition}>{sourceLine(item)}</p>
+          <p className="kpi-source" title={`${sourceLine(item)}\n\n${item.definition}`}>Fonte: {sourceShort(item)}</p>
           {note && <p className="kpi-note">{note}</p>}
         </>
       ) : (
