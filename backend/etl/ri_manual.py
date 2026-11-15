@@ -29,6 +29,7 @@ class ManualDataError(ValueError):
 @dataclass
 class ManualObservation:
     indicator_code: str
+    period_type: str
     period_start: date
     period_end: date
     value: float
@@ -64,8 +65,14 @@ def load_csv(path: str | Path) -> list[ManualObservation]:
             errors.append(f"linha {line}: source_url fora dos hosts oficiais ({host or 'vazio'})")
         if not r["source_locator"].strip():
             errors.append(f"linha {line}: informe página/aba/tabela em source_locator")
+        ptype = (r.get("period_type") or "quarter").strip() or "quarter"
+        if ptype not in {"quarter", "ytd"}:
+            errors.append(f"linha {line}: period_type deve ser quarter ou ytd")
+            continue
         try:
             start, end = parse_period_code(r["period"])
+            if ptype == "ytd":
+                start = date(end.year, 1, 1)  # acumulado no ano: jan até o fim do trimestre
             value = float(r["value"].replace(",", "."))
             published = date.fromisoformat(r["published_at"].strip())
         except ValueError as exc:
@@ -75,7 +82,7 @@ def load_csv(path: str | Path) -> list[ManualObservation]:
             errors.append(f"linha {line}: published_at anterior ao fim do período")
         if ind.unit == "pct" and not (-500 <= value <= 500):
             errors.append(f"linha {line}: percentual fora de [-500, 500] — use 21.6 para 21,6%")
-        out.append(ManualObservation(code, start, end, value, ind.unit, r["source_url"].strip(),
+        out.append(ManualObservation(code, ptype, start, end, value, ind.unit, r["source_url"].strip(),
                                      r["source_locator"].strip(), published, r["collected_by"].strip()))
     if errors:
         raise ManualDataError("Arquivo rejeitado:\n  " + "\n  ".join(errors))

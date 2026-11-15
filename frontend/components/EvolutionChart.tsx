@@ -39,39 +39,59 @@ function quarterEnds(first: string, last: string): string[] {
   return out;
 }
 
-export function EvolutionChart({ profit, roe, selectedEnd }: {
-  profit: SeriesPoint[]; roe: SeriesPoint[]; selectedEnd: string;
+/** "9M26", "6M26"... para acumulados do ano. */
+const ytdLabel = (end: string) => `${Number(end.slice(5, 7))}M${end.slice(2, 4)}`;
+
+export function EvolutionChart({ profit, roe, profitYtd = [], roeYtd = [], selectedEnd }: {
+  profit: SeriesPoint[]; roe: SeriesPoint[]; profitYtd?: SeriesPoint[]; roeYtd?: SeriesPoint[]; selectedEnd: string;
 }) {
   const [mode, setMode] = useState<Mode>("q");
   const [hover, setHover] = useState<number | null>(null);
   const canvas = useRef<HTMLDivElement>(null);
   // No celular o gráfico rola na horizontal: começa mostrando o período mais recente.
-  useEffect(() => { if (canvas.current) canvas.current.scrollLeft = canvas.current.scrollWidth; }, [mode]);
+  useEffect(() => {
+    if (canvas.current) canvas.current.scrollLeft = mode === "q" ? canvas.current.scrollWidth : 0;
+  }, [mode]);
 
   const cols: Col[] = useMemo(() => {
     const all = [...profit, ...roe].map((p) => p.period_end).sort();
-    if (!all.length) return [];
+    if (!all.length && mode === "q") return [];
     const pm = new Map(profit.map((p) => [p.period_end, p]));
     const rm = new Map(roe.map((p) => [p.period_end, p]));
-    const ends = quarterEnds(all[0], all[all.length - 1]).slice(-8);
     if (mode === "q") {
+      const ends = quarterEnds(all[0], all[all.length - 1]).slice(-8);
       return ends.map((e) => ({
         key: e, label: quarterLabel(e), profit: pm.get(e)?.value, roe: rm.get(e)?.value,
         complete: pm.has(e), src: pm.get(e),
       }));
     }
-    const years = Array.from(new Set(ends.map((e) => e.slice(0, 4))));
-    return years.map((y) => {
-      const qs = [3, 6, 9, 12].map((m) => quarterEnds(`${y}-${String(m).padStart(2, "0")}-01`,
-                                                      `${y}-${String(m).padStart(2, "0")}-01`)[0]);
-      const vals = qs.map((e) => pm.get(e)?.value);
-      const complete = vals.every((v) => v !== undefined);
-      return { key: y, label: y, profit: complete ? vals.reduce((a, b) => a! + b!, 0) : undefined,
-               complete, src: pm.get(qs.find((e) => pm.has(e)) ?? "") };
-    });
-  }, [profit, roe, mode]);
+    // Acumulado no ano (YTD) publicado pelo banco: compara períodos iguais (ex.: 9M25 × 9M26)
+    const pm2 = new Map(profitYtd.map((p) => [p.period_end, p]));
+    const rm2 = new Map(roeYtd.map((p) => [p.period_end, p]));
+    const yEnds = Array.from(new Set([...pm2.keys(), ...rm2.keys()])).filter((e) => e <= selectedEnd).sort().slice(-4);
+    return yEnds.map((e) => ({ key: e, label: ytdLabel(e), profit: pm2.get(e)?.value, roe: rm2.get(e)?.value,
+                               complete: pm2.has(e), src: pm2.get(e) }));
+  }, [profit, roe, profitYtd, roeYtd, selectedEnd, mode]);
 
-  if (!cols.length) return <p className="muted">Sem observações para esta série.</p>;
+  if (!cols.length) {
+    return (
+      <div className="chart">
+        <div className="chart-toolbar">
+          <div className="segmented" role="group" aria-label="Agregação">
+            <button aria-pressed={mode === "q"} onClick={() => setMode("q")}>Trimestral</button>
+            <button aria-pressed={mode === "y"} onClick={() => setMode("y")}>Acumulado no ano</button>
+          </div>
+        </div>
+        <p className="muted">Sem dados {mode === "q" ? "trimestrais" : "acumulados no ano"} até este período.</p>
+      </div>
+    );
+  }
+  const ytdChange = mode === "y" && cols.length >= 2 && cols.at(-1)!.profit !== undefined
+    ? (() => {
+        const last = cols.at(-1)!, prevYear = cols.find((c) => c.key === `${Number(last.key.slice(0, 4)) - 1}${last.key.slice(4)}`);
+        return prevYear?.profit ? { label: `${prevYear.label} → ${last.label}`, pct: (last.profit! / prevYear.profit - 1) * 100 } : null;
+      })()
+    : null;
 
   const W = 640, PADL = 52, PADR = 16, H1 = 190, H2 = 120, GAP = 34, TOP = 18;
   const plotW = W - PADL - PADR;
@@ -81,7 +101,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
   const pMax = pScale[0];
   const pTicks = ticksOf(pScale);
   const yP = (v: number) => TOP + H1 - (v / pMax) * H1;
-  const showRoe = mode === "q";
+  const showRoe = true;
   const rVals = cols.map((c) => c.roe).filter((v): v is number => v !== undefined);
   const rScale = niceScale(Math.max(...rVals, 1) * 1.15);
   const rMax = rScale[0];
@@ -107,7 +127,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
       .join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `bb-intelligence-lucro-rspl-${mode === "q" ? "trimestral" : "anual"}.csv`;
+    a.download = `bb-intelligence-lucro-rspl-${mode === "q" ? "trimestral" : "acumulado"}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -119,14 +139,14 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
       <div className="chart-toolbar">
         <div className="segmented" role="group" aria-label="Agregação">
           <button aria-pressed={mode === "q"} onClick={() => setMode("q")}>Trimestral</button>
-          <button aria-pressed={mode === "y"} onClick={() => setMode("y")}>Anual</button>
+          <button aria-pressed={mode === "y"} onClick={() => setMode("y")}>Acumulado no ano</button>
         </div>
         <button className="btn-ghost" onClick={csv}><IconDownload width={16} height={16} />CSV</button>
       </div>
 
       <div className="chart-canvas" ref={canvas}>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" width="100%"
-             aria-label={`Lucro líquido ajustado ${mode === "q" ? "por trimestre" : "por ano"}${showRoe ? " e RSPL" : ""}. Valores na tabela abaixo.`}>
+             aria-label={`Lucro líquido ajustado ${mode === "q" ? "por trimestre" : "acumulado no ano"}${showRoe ? " e RSPL" : ""}. Valores na tabela abaixo.`}>
           <text x={PADL} y={10} className="axis-title">Lucro líquido ajustado (R$ bi)</text>
           {pTicks.map((t) => (
             <g key={`p${t}`}>
@@ -135,10 +155,10 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
             </g>
           ))}
           {cols.map((c, i) => {
-            const sel = mode === "q" ? c.key === selectedEnd : selectedEnd.startsWith(c.key);
+            const sel = c.key === selectedEnd;
             if (c.profit === undefined) {
               return <text key={c.key} x={cx(i)} y={yP(0) - 6} textAnchor="middle" className="tick muted-tick">
-                {mode === "y" && !c.complete ? "incompleto" : "s/ dado"}</text>;
+                s/ dado</text>;
             }
             const v = c.profit / 1e9, y = yP(Math.max(v, 0)), hgt = Math.abs(yP(v) - yP(0));
             const r = Math.min(4, hgt / 2);
@@ -196,17 +216,23 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
           <div className="tooltip" style={{ left: `${(cx(hover!) / W) * 100}%` }} role="status">
             <strong>{h.label}</strong>
             <span>Lucro ajustado: {h.profit !== undefined ? `R$ ${number(h.profit / 1e9, 2)} bi`
-              : mode === "y" && !h.complete ? "ano incompleto" : "sem dado"}</span>
+              : "sem dado"}</span>
             {showRoe && <span>RSPL: {h.roe !== undefined ? `${number(h.roe, 1)}% a.a.` : "sem dado"}</span>}
             {h.src && <span className="tooltip-src">{sourceLine(h.src)}</span>}
           </div>
         )}
       </div>
 
+      {ytdChange && (
+        <p className="ytd-change">
+          Lucro ajustado {ytdChange.label}:{" "}
+          <strong className={ytdChange.pct >= 0 ? "pos" : "neg"}>{ytdChange.pct > 0 ? "+" : ""}{number(ytdChange.pct, 1)}%</strong>
+        </p>
+      )}
       <p className="chart-note">
         {mode === "q"
           ? "Verde = resultado positivo, vermelho = negativo; trimestre selecionado com contorno amarelo. Lucro e RSPL em gráficos separados, cada um com sua escala."
-          : "Soma dos quatro trimestres; anos com trimestre faltando aparecem como incompletos. RSPL anual não é a soma dos trimestres e não é exibido."}
+          : "Acumulado de janeiro até o trimestre, como publicado pelo banco (lucro e RSPL do período). Compara sempre períodos iguais, ex.: 9M25 × 9M26."}
       </p>
       <details className="table-view">
         <summary>Ver dados em tabela</summary>

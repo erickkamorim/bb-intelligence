@@ -45,3 +45,13 @@ def test_gaps_and_duplicates():
     assert "2026Q1" in gaps[0].message
     assert validation.check_no_duplicates([(1,), (1,)], "x")[0].severity == "error"
     assert validation.check_finite([1.0, float("nan")], "x")
+
+
+def test_ri_manual_ytd_rows(tmp_path):
+    p = tmp_path / "ri.csv"
+    p.write_text(HEAD.strip() + ",period_type\n"
+                 "lucro_liquido_ajustado,2026Q3,100,BRL,https://ri.bb.com.br/x.pdf,p. 10,2026-11-11,e,ytd\n"
+                 "roe_ajustado,2026Q3,2.8,pct,https://ri.bb.com.br/x.pdf,p. 10,2026-11-11,e,\n", encoding="utf-8")
+    a, b = ri_manual.load_csv(p)
+    assert a.period_type == "ytd" and a.period_start == date(2026, 1, 1)
+    assert b.period_type == "quarter" and b.period_start == date(2026, 7, 1)

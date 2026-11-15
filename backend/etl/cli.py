@@ -168,7 +168,7 @@ def cmd_ri_load(args) -> int:
                 period=period_code(o.period_end),
                 published_at=datetime.combine(o.published_at, datetime.min.time(), timezone.utc),
                 locator=o.source_locator)
-            i, r = upsert_observations(s, doc, [ObsIn(o.indicator_code, o.period_start, o.period_end, "quarter",
+            i, r = upsert_observations(s, doc, [ObsIn(o.indicator_code, o.period_start, o.period_end, o.period_type,
                                                       o.value, extra={"collected_by": o.collected_by})])
             total_i, total_r = total_i + i, total_r + r
         run.rows_inserted, run.rows_updated = total_i, total_r
