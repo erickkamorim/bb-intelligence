@@ -8,7 +8,7 @@ jobs:
           S=https://bb-intelligence-lilac.vercel.app
           curl -s -m 90 -o /dev/null https://bb-intelligence-api.onrender.com/api/v1/health || true   # acorda a API
           check() { body=$(curl -sS -m 90 "$S$1"); code=$(curl -s -o /dev/null -w "%{http_code}" -m 90 "$S$1"); echo "== $1 HTTP $code"; for t in "${@:2}"; do echo "$body" | grep -q "$t" && echo "  OK: $t" || echo "  FALTA: $t"; done; echo "$body" | grep -oE "Não foi possível[^<]{0,120}" | head -2; }
-          check "/" "Visão Executiva" "R\$ 1,27 bi" "13,75%" "Projeto independente, não oficial" "Pessoas Físicas"
+          check "/" "Visão Executiva" "R\$ 1,27 bi" "Projeto independente, não oficial" "Por que o lucro mudou" "Alertas do trimestre" "O que o banco diz" "IR/CSLL"
           check "/?period=2026Q2" "R\$ 3,91 bi"
           check "/qualidade" "Cobertura por indicador" "selic_meta"
           check "/resultados" "Comparativo trimestral" "R\$ 3,26 bi"
