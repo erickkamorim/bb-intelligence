@@ -8,7 +8,7 @@ const COLORS: Record<string, string> = { carteira_pf: C.pf, carteira_pj: C.pj, c
 export function DonutChart({ data }: { data: CreditSegments }) {
   const segs = (data.segments ?? []).filter((s) => s.status === "ok" && s.value !== undefined);
   const total = data.total ?? 0;
-  const R = 70, r = 46, C = 90;
+  const R = 70, r = 46, CX = 90;
   let angle = -Math.PI / 2;
   const gap = 0.02; // folga entre fatias (separação pela cor de fundo)
 
@@ -17,7 +17,7 @@ export function DonutChart({ data }: { data: CreditSegments }) {
     const a0 = angle + gap / 2, a1 = angle + frac * 2 * Math.PI - gap / 2;
     angle += frac * 2 * Math.PI;
     const large = a1 - a0 > Math.PI ? 1 : 0;
-    const p = (rad: number, a: number) => `${C + rad * Math.cos(a)},${C + rad * Math.sin(a)}`;
+    const p = (rad: number, a: number) => `${CX + rad * Math.cos(a)},${CX + rad * Math.sin(a)}`;
     const d = `M${p(R, a0)} A${R},${R} 0 ${large} 1 ${p(R, a1)} L${p(r, a1)} A${r},${r} 0 ${large} 0 ${p(r, a0)} Z`;
     return { s, d };
   });
@@ -31,8 +31,8 @@ export function DonutChart({ data }: { data: CreditSegments }) {
             <title>{`${s.label}: ${brl(s.value!)} (${number(s.share_pct ?? 0, 1)}%)`}</title>
           </path>
         ))}
-        <text x={C} y={C - 2} textAnchor="middle" className="donut-total">{brl(total)}</text>
-        <text x={C} y={C + 16} textAnchor="middle" className="donut-unit">expandida</text>
+        <text x={CX} y={CX - 2} textAnchor="middle" className="donut-total">{brl(total)}</text>
+        <text x={CX} y={CX + 16} textAnchor="middle" className="donut-unit">expandida</text>
       </svg>
       <ul className="legend">
         {segs.map((s) => (
