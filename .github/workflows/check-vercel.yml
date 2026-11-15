@@ -1,16 +1,22 @@
 name: check-vercel
 on: { push: { branches: [check-vercel] } }
 jobs:
-  check:
+  probe:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          S=https://bb-intelligence-lilac.vercel.app
-          curl -s -m 90 -o /dev/null https://bb-intelligence-api.onrender.com/api/v1/health || true   # acorda a API
-          check() { body=$(curl -sS -m 90 "$S$1"); code=$(curl -s -o /dev/null -w "%{http_code}" -m 90 "$S$1"); echo "== $1 HTTP $code"; for t in "${@:2}"; do echo "$body" | grep -q "$t" && echo "  OK: $t" || echo "  FALTA: $t"; done; echo "$body" | grep -oE "Não foi possível[^<]{0,120}" | head -2; }
-          check "/" "Visão Executiva" "R\$ 1,27 bi" "Projeto independente, não oficial" "Por que o lucro mudou" "Alertas do trimestre" "O que o banco diz" "IR/CSLL"
-          check "/?period=2026Q2" "R\$ 3,91 bi"
-          check "/qualidade" "Cobertura por indicador" "selic_meta"
-          check "/resultados" "Comparativo trimestral" "R\$ 3,26 bi"
-          check "/credito" "Inadimplência acima de 90 dias" "6,08%"
-          check "/mercado" "Meta Selic" "IPCA acumulado em 12 meses" "Juro real"
+          B="https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata"
+          echo "=== METADATA"; curl -sS -m 60 "$B/\$metadata" | head -c 3000; echo
+          echo "=== CADASTRO"; curl -sS -m 90 "$B/IfDataCadastro(AnoMes=@AnoMes)?@AnoMes=202606&\$format=json&\$top=3" | head -c 2000; echo
+          echo "=== CADASTRO BB/ITAU/BRADESCO/SANTANDER/CAIXA"
+          for n in "BANCO DO BRASIL" "ITAU" "BRADESCO" "SANTANDER" "CAIXA ECONOMICA"; do
+            q=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "contains(NomeInstituicao,'$n')")
+            curl -sS -m 90 "$B/IfDataCadastro(AnoMes=@AnoMes)?@AnoMes=202606&\$format=json&\$filter=$q&\$select=CodInst,NomeInstituicao,TipoInstituicao,CodConglomeradoPrudencial,CodConglomeradoFinanceiro,SegmentoTb" | head -c 1500; echo
+          done
+          echo "=== VALORES amostra"
+          curl -sS -m 120 "$B/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)?@AnoMes=202606&@TipoInstituicao=1&@Relatorio='1'&\$format=json&\$top=5" | head -c 2500; echo
+          echo "=== VALORES relatorios distintos"
+          for r in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+            c=$(curl -sS -m 120 "$B/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)?@AnoMes=202606&@TipoInstituicao=1&@Relatorio='$r'&\$format=json&\$top=1&\$select=NomeRelatorio,Grupo,NomeColuna" | head -c 400)
+            echo "R$r: $c"
+          done
