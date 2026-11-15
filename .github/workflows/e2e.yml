@@ -38,7 +38,13 @@ jobs:
           check "/" "Projeto independente, não oficial"
           check "/?period=2026Q2" "R\$ 3,91 bi"
           check "/qualidade" "Cobertura por indicador"
-          check "/credito" "Em desenvolvimento"
+          check "/resultados" "Comparativo trimestral"
+          check "/resultados" "Lucro consolidado"
+          check "/credito" "Inadimplência acima de 90 dias"
+          check "/credito" "6,08%"
+          check "/mercado" "Meta Selic"
+          check "/mercado" "IPCA acumulado em 12 meses"
+          check "/previsoes" "Em desenvolvimento"
           code=$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:3000/nao-existe); echo "404 -> $code"; test "$code" = "404"
       - name: Capturas de tela
         run: |
@@ -48,7 +54,9 @@ jobs:
           import { chromium } from "playwright";
           const b = await chromium.launch();
           const shots = [["desktop", 1440, 1000, "/"], ["mobile", 390, 844, "/"], ["qualidade", 1440, 1000, "/qualidade"],
-                         ["desktop-recolhido", 1440, 1000, "/"]];
+                         ["desktop-recolhido", 1440, 1000, "/"],
+                         ["resultados", 1440, 1000, "/resultados"], ["credito", 1440, 1000, "/credito"],
+                         ["mercado", 1440, 1000, "/mercado"]];
           for (const [name, w, h, path] of shots) {
             const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: w < 500 ? 2 : 1 });
             await p.goto("http://127.0.0.1:3000" + path, { waitUntil: "networkidle" });

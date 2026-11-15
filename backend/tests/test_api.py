@@ -110,3 +110,9 @@ def test_data_quality_and_events(client):
 def test_unknown_route_is_json_error(client):
     r = client.get("/api/v1/nada")
     assert r.status_code == 404 and "error" in r.json()
+
+
+def test_series_compact(client):
+    body = client.get("/api/v1/series/ipca_mensal?compact=true").json()
+    assert set(body["data"][0]) == {"period_end", "value"}
+    assert body["meta"]["source"]["source_code"] == "bcb_sgs"

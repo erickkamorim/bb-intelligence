@@ -67,3 +67,9 @@ export function sourceShort(s: Src): string {
   const parts = [SHORT[s.source_code ?? ""] ?? s.source, loc, s.published_at ? date(s.published_at) : null];
   return parts.filter(Boolean).join(" · ");
 }
+
+/** "2026-06-30" -> "2026Q2" */
+export function periodCode(iso: string): string {
+  const [y, m] = iso.split("-").map(Number);
+  return `${y}Q${Math.floor((m - 1) / 3) + 1}`;
+}
