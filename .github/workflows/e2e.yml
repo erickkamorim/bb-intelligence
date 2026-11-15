@@ -65,11 +65,17 @@ jobs:
           const shots = [["desktop", 1440, 1000, "/"], ["mobile", 390, 844, "/"], ["qualidade", 1440, 1000, "/qualidade"],
                          ["desktop-recolhido", 1440, 1000, "/"],
                          ["resultados", 1440, 1000, "/resultados"], ["credito", 1440, 1000, "/credito"],
-                         ["mercado", 1440, 1000, "/mercado"], ["pares", 1440, 1000, "/pares"]];
+                         ["mercado", 1440, 1000, "/mercado"], ["pares", 1440, 1000, "/pares"], ["mobile-acumulado", 390, 844, "/"]];
           for (const [name, w, h, path] of shots) {
             const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: w < 500 ? 2 : 1 });
             await p.goto("http://127.0.0.1:3000" + path, { waitUntil: "networkidle" });
             if (name === "desktop-recolhido") { await p.click(".collapse-btn"); await p.waitForTimeout(400); }
+            if (name === "mobile-acumulado") {
+              await p.getByRole("button", { name: "Acumulado no ano" }).click(); await p.waitForTimeout(400);
+              const el = await p.$(".row-main + .row-main .card");
+              await el.screenshot({ path: `${name}.png` }); await el.screenshot({ path: `${name}.jpg`, type: "jpeg", quality: 60 });
+              continue;
+            }
             if (w > 900) console.log(name, "largura do menu:", await p.$eval(".sidebar", (e) => e.getBoundingClientRect().width));
             await p.screenshot({ path: `${name}.png`, fullPage: true });
             await p.screenshot({ path: `${name}.jpg`, fullPage: true, type: "jpeg", quality: 60 });
