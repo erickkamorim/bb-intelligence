@@ -6,17 +6,32 @@ jobs:
     steps:
       - run: |
           B="https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata"
-          echo "=== METADATA"; curl -sS -m 60 "$B/\$metadata" | head -c 3000; echo
-          echo "=== CADASTRO"; curl -sS -m 90 "$B/IfDataCadastro(AnoMes=@AnoMes)?@AnoMes=202606&\$format=json&\$top=3" | head -c 2000; echo
-          echo "=== CADASTRO BB/ITAU/BRADESCO/SANTANDER/CAIXA"
-          for n in "BANCO DO BRASIL" "ITAU" "BRADESCO" "SANTANDER" "CAIXA ECONOMICA"; do
-            q=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "contains(NomeInstituicao,'$n')")
-            curl -sS -m 90 "$B/IfDataCadastro(AnoMes=@AnoMes)?@AnoMes=202606&\$format=json&\$filter=$q&\$select=CodInst,NomeInstituicao,TipoInstituicao,CodConglomeradoPrudencial,CodConglomeradoFinanceiro,SegmentoTb" | head -c 1500; echo
+          enc() { python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$1"; }
+          echo "=== PRUDENCIAIS"
+          for n in "BB - PRUDENCIAL" "ITAU - PRUDENCIAL" "BRADESCO - PRUDENCIAL" "SANTANDER - PRUDENCIAL" "CAIXA ECONOMICA FEDERAL - PRUDENCIAL"; do
+            f=$(enc "NomeInstituicao eq '$n'")
+            curl -sS -m 90 "$B/IfDataCadastro(AnoMes=@AnoMes)?@AnoMes=202606&\$format=json&\$filter=$f&\$select=CodInst,NomeInstituicao,CodConglomeradoPrudencial,SegmentoTb" | python3 -c "import sys,json;print(json.load(sys.stdin)['value'])"
           done
-          echo "=== VALORES amostra"
-          curl -sS -m 120 "$B/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)?@AnoMes=202606&@TipoInstituicao=1&@Relatorio='1'&\$format=json&\$top=5" | head -c 2500; echo
-          echo "=== VALORES relatorios distintos"
-          for r in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
-            c=$(curl -sS -m 120 "$B/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)?@AnoMes=202606&@TipoInstituicao=1&@Relatorio='$r'&\$format=json&\$top=1&\$select=NomeRelatorio,Grupo,NomeColuna" | head -c 400)
-            echo "R$r: $c"
+          echo "=== NOMES com BRASIL/ITAU/BRADESCO/SANTANDER/CAIXA e PRUDENCIAL"
+          curl -sS -m 120 "$B/IfDataCadastro(AnoMes=@AnoMes)?@AnoMes=202606&\$format=json&\$select=CodInst,NomeInstituicao" | python3 -c "
+          import sys,json
+          for r in json.load(sys.stdin)['value']:
+              n=r['NomeInstituicao'].upper()
+              if 'PRUDENCIAL' in n and any(k in n for k in ['BB','BRASIL','ITAU','BRADESCO','SANTANDER','CAIXA']): print(r)"
+          echo "=== MESES DISPONIVEIS (Tipo 1, Resumo, primeiro registro)"
+          for m in 202509 202512 202603 202606 202609; do
+            c=$(curl -sS -m 120 "$B/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)?@AnoMes=$m&@TipoInstituicao=1&@Relatorio='1'&\$format=json&\$top=1&\$select=CodInst" | head -c 200); echo "$m: $c"
           done
+          echo "=== COLUNAS Resumo (Tipo 1)"
+          curl -sS -m 180 "$B/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)?@AnoMes=202606&@TipoInstituicao=1&@Relatorio='1'&\$format=json&\$select=CodInst,Conta,NomeColuna,DescricaoColuna,Saldo" > r1.json
+          python3 -c "
+          import json; v=json.load(open('r1.json'))['value']; seen={}
+          for r in v: seen.setdefault((r['Conta'],r['NomeColuna']),r['DescricaoColuna'])
+          for k,d in sorted(seen.items()): print(k,d)
+          print('linhas',len(v),'instituicoes',len({r['CodInst'] for r in v}))"
+          echo "=== COLUNAS DRE (Relatorio 4, Tipo 1)"
+          curl -sS -m 180 "$B/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)?@AnoMes=202606&@TipoInstituicao=1&@Relatorio='4'&\$format=json&\$select=CodInst,Conta,NomeColuna,Grupo" > r4.json
+          python3 -c "
+          import json; v=json.load(open('r4.json'))['value']; seen=set()
+          for r in v: seen.add((r['Conta'],r['Grupo'],r['NomeColuna'].replace(chr(10),' ')))
+          for k in sorted(seen): print(k)"
