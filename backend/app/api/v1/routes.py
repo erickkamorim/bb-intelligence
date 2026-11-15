@@ -113,6 +113,17 @@ def notes(period: str | None = Query(None), db: Session = Depends(get_db)):
                     note="Paráfrases curtas do release do RI, com a página de origem. Interpretação do banco, não da plataforma.")
 
 
+@router.get("/peers")
+def peers(period: str | None = Query(None, description="AAAAQn; padrão: último trimestre publicado no IF.data"),
+          db: Session = Depends(get_db)):
+    if period:
+        try:
+            parse_period_code(period)
+        except ValueError as exc:
+            raise HTTPException(400, detail={"code": "invalid_period", "message": str(exc)})
+    return envelope(q.peers(db, period.upper() if period else None))
+
+
 @router.get("/data-quality")
 def data_quality(db: Session = Depends(get_db)):
     return envelope(q.data_quality(db))

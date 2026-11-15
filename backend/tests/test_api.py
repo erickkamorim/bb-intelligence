@@ -14,7 +14,7 @@ from sqlalchemy.pool import StaticPool  # noqa: E402
 from app.api.deps import get_db  # noqa: E402
 from app.db.models import Base  # noqa: E402
 from app.main import app  # noqa: E402
-from etl.load import ObsIn, get_or_create_document, seed, upsert_observations  # noqa: E402
+from etl.load import ObsIn, get_or_create_document, seed, upsert_observations, upsert_peer_values  # noqa: E402
 
 Q = "quarter"
 # componentes FICTÍCIOS que somam o lucro: 2T26 = 400, 3T26 = 100
@@ -53,6 +53,15 @@ def client():
         upsert_observations(s, sgs, [ObsIn("ipca_mensal", None, date(2026, m, 1), "monthly", 0.5)
                                      for m in range(1, 10)] +
                             [ObsIn("ipca_mensal", None, date(2025, m, 1), "monthly", 0.5) for m in range(10, 13)])
+        ifd = get_or_create_document(s, "bcb_ifdata", "IFDATA_RESUMO", "https://olinda.bcb.gov.br/x", "h-if", now)
+        from etl.ifdata import PeerRow
+        rows = []
+        for cod, name, pl, l1, l2 in [("C0080329", "Banco do Brasil", 100.0, 3.0, 6.0), ("C0080099", "Itaú", 200.0, 10.0, 21.0)]:
+            for end, lucro in [(date(2026, 3, 31), l1), (date(2026, 6, 30), l2)]:
+                rows += [PeerRow(cod, name, end, "patrimonio_liquido", pl, "BRL"),
+                         PeerRow(cod, name, end, "lucro_semestre_acum", lucro, "BRL"),
+                         PeerRow(cod, name, end, "basileia", 14.0, "pct")]
+        upsert_peer_values(s, ifd, rows)
         s.commit()
 
     def _db():
@@ -149,3 +158,12 @@ def test_alerts_flag_adverse_moves(client):
 def test_notes_endpoint(client):
     body = client.get("/api/v1/notes?period=2026Q3").json()
     assert body["data"] and all(n["source_locator"] for n in body["data"])
+
+
+def test_peers_quarterly_profit_and_roe(client):
+    d = client.get("/api/v1/peers").json()["data"]
+    assert d["status"] == "ok" and d["period"] == "2026Q2"
+    bb = next(b for b in d["banks"] if b["is_bb"])
+    assert bb["lucro_trimestre"] == 3.0 and bb["lucro_derivacao"].startswith("derived:")
+    assert round(bb["roe_anualizado"], 2) == 12.0
+    assert d["bb_rank"]["roe_anualizado"] == {"position": 2, "of": 2}  # Itaú: 11 × 4 / 200 = 22%

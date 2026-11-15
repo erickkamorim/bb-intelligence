@@ -30,3 +30,4 @@ export const IconCheck = (p: P) => (<svg {...base(p)}><circle cx="12" cy="12" r=
 export const IconClock = (p: P) => (<svg {...base(p)}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>);
 export const IconArrowUp = (p: P) => (<svg {...base(p)} width={14} height={14}><path d="M12 19V5M6 11l6-6 6 6"/></svg>);
 export const IconArrowDown = (p: P) => (<svg {...base(p)} width={14} height={14}><path d="M12 5v14M6 13l6 6 6-6"/></svg>);
+export const IconScale = (p: P) => (<svg {...base(p)}><path d="M12 4v16M5 20h14M6 8h12"/><path d="M6 8l-3 6a3 3 0 0 0 6 0zM18 8l-3 6a3 3 0 0 0 6 0z"/></svg>);

@@ -13,7 +13,7 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import Document, EtlRun, IndicatorModel, Observation, Source
+from app.db.models import Document, EtlRun, IndicatorModel, Observation, PeerValue, Source
 from .periods import derive_q4
 from .registry import INDICATORS, SOURCES
 
@@ -160,3 +160,23 @@ def derive_fourth_quarter(session: Session, year: int) -> int:
             extra={"fy_obs_id": fy.id, "ytd9_obs_id": ytd9.id})])
         total += i + r
     return total
+
+
+def upsert_peer_values(session: Session, doc: Document, rows) -> tuple[int, int]:
+    """IF.data: uma linha por (instituição, data, métrica). Valor novo substitui o anterior (o BCB reapresenta)."""
+    ins = upd = 0
+    for r in rows:
+        cur = session.scalar(select(PeerValue).where(PeerValue.cod_inst == r.cod_inst,
+                                                     PeerValue.period_end == r.period_end,
+                                                     PeerValue.metric == r.metric))
+        val = Decimal(str(round(r.value, 6)))
+        if cur is None:
+            session.add(PeerValue(cod_inst=r.cod_inst, institution=r.institution, period_end=r.period_end,
+                                  metric=r.metric, value=val, unit=r.unit, source_document_id=doc.id,
+                                  retrieved_at=doc.retrieved_at))
+            ins += 1
+        elif Decimal(cur.value) != val:
+            cur.value, cur.source_document_id, cur.retrieved_at = val, doc.id, doc.retrieved_at
+            upd += 1
+    session.flush()
+    return ins, upd

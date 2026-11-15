@@ -19,7 +19,9 @@ jobs:
         working-directory: backend
         run: |
           pip install -r requirements.txt
+          alembic upgrade head
           python -m etl seed && python -m etl ri load --file ../data/manual/ri_bb.csv   # idempotente
+          python -m etl ifdata load || echo "IF.data indisponível agora"
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/api.log 2>&1 &
           for i in $(seq 1 30); do curl -sf 127.0.0.1:8000/api/v1/health && break; sleep 1; done
       - name: Frontend
@@ -49,6 +51,8 @@ jobs:
           check "/mercado" "Meta Selic"
           check "/mercado" "IPCA acumulado em 12 meses"
           check "/previsoes" "Em desenvolvimento"
+          check "/pares" "Itaú"
+          check "/pares" "ROE anualizado"
           code=$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:3000/nao-existe); echo "404 -> $code"; test "$code" = "404"
       - name: Capturas de tela
         run: |
@@ -60,7 +64,7 @@ jobs:
           const shots = [["desktop", 1440, 1000, "/"], ["mobile", 390, 844, "/"], ["qualidade", 1440, 1000, "/qualidade"],
                          ["desktop-recolhido", 1440, 1000, "/"],
                          ["resultados", 1440, 1000, "/resultados"], ["credito", 1440, 1000, "/credito"],
-                         ["mercado", 1440, 1000, "/mercado"]];
+                         ["mercado", 1440, 1000, "/mercado"], ["pares", 1440, 1000, "/pares"]];
           for (const [name, w, h, path] of shots) {
             const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: w < 500 ? 2 : 1 });
             await p.goto("http://127.0.0.1:3000" + path, { waitUntil: "networkidle" });

@@ -64,6 +64,10 @@ uvicorn app.main:app --reload          # http://localhost:8000/docs
 | `GET /api/v1/series/{code}?from=&to=&period_type=` | série histórica com fonte por ponto |
 | `GET /api/v1/credit/segments?period=2026Q3` | carteira por segmento e participação |
 | `GET /api/v1/data-quality` | cobertura, atraso (`ok`/`stale`/`missing`) e últimas execuções do ETL |
+| `GET /api/v1/results/bridge?period=` | ponte do lucro ajustado entre trimestres (DRE gerencial) |
+| `GET /api/v1/alerts?period=` | variações fora do comum, com polaridade por indicador |
+| `GET /api/v1/notes?period=` | explicações do release (paráfrases com página) |
+| `GET /api/v1/peers?period=` | BB vs Itaú, Bradesco, Santander e Caixa (IF.data) |
 | `GET /api/v1/events` | agenda oficial — vazia com `status: not_collected` até ser integrada |
 
 Toda resposta tem `data` e `meta` (versão, horário e aviso de projeto não oficial). Erros vêm como `{"error": {"code", "message"}}`. Indicador sem dado aparece com `status: "missing"`, nunca como zero. O workflow **api-smoke** sobe a API no GitHub lendo o Neon e chama todos os endpoints.
