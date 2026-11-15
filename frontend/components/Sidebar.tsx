@@ -93,7 +93,7 @@ export function Sidebar() {
           </ul>
         </nav>
         <div className="sidebar-foot">
-          <p className="sidebar-note">Projeto independente, não oficial e não afiliado ao Banco do Brasil.</p>
+          <p className="sidebar-note">Projeto independente, não oficial e não afiliado ao Banco do Brasil. Dados com atualização diária, não em tempo real.</p>
           <button className="collapse-btn" onClick={toggle} aria-pressed={collapsed}
                   aria-label={collapsed ? "Expandir menu" : "Recolher menu"}>
             <IconChevronLeft className="collapse-icon" />
