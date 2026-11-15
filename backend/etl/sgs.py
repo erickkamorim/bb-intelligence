@@ -66,15 +66,39 @@ def dedupe(points: Iterable[SgsPoint]) -> list[SgsPoint]:
     return [by_date[d] for d in sorted(by_date)]
 
 
-def fetch(code: int, start: date, end: date, session=None, timeout: float = 30.0) -> list[SgsPoint]:
+def _get_json(s, url: str, timeout: float, attempts: int, wait: float, sleep):
+    """GET com novas tentativas: o SGS às vezes responde 5xx ou HTML no lugar de JSON."""
+    last: Exception | None = None
+    for i in range(attempts):
+        try:
+            r = s.get(url, timeout=timeout, headers={"Accept": "application/json"})
+            if r.status_code == 404:
+                return None  # sem dados na janela
+            if r.status_code >= 500 or r.status_code == 429:
+                raise SgsFormatError(f"HTTP {r.status_code}")
+            r.raise_for_status()
+            try:
+                return r.json()
+            except ValueError as exc:
+                raise SgsFormatError("resposta não é JSON") from exc
+        except Exception as exc:  # noqa: BLE001 - erros de rede e de formato entram no retry
+            last = exc
+            if i < attempts - 1:
+                sleep(wait * (2 ** i))
+    raise SgsFormatError(f"SGS indisponível após {attempts} tentativas ({url}): {last}")
+
+
+def fetch(code: int, start: date, end: date, session=None, timeout: float = 30.0,
+          attempts: int = 5, wait: float = 5.0, sleep=None) -> list[SgsPoint]:
+    import time
+
     import requests  # import tardio: os testes de parsing não exigem rede
 
     s = session or requests.Session()
+    sleep = sleep or time.sleep
     pts: list[SgsPoint] = []
     for a, b in windows(start, end):
-        r = s.get(build_url(code, a, b), timeout=timeout, headers={"Accept": "application/json"})
-        if r.status_code == 404:
-            continue  # sem dados na janela
-        r.raise_for_status()
-        pts.extend(parse(r.json()))
+        payload = _get_json(s, build_url(code, a, b), timeout, attempts, wait, sleep)
+        if payload is not None:
+            pts.extend(parse(payload))
     return dedupe(pts)
