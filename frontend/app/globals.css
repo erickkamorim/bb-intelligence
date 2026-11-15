@@ -136,7 +136,7 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
   font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 8px; color: var(--ink); cursor: pointer; }
 .btn-ghost:hover { background: #F1F4F8; }
 .chart-canvas { position: relative; overflow-x: auto; }
-.chart-canvas svg { min-width: 540px; }
+.chart-canvas svg { min-width: 460px; }
 .chart-canvas svg { display: block; overflow: visible; }
 .axis-title { font-size: 12px; fill: var(--ink-2); font-weight: 600; }
 .tick { font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
@@ -154,7 +154,7 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 .table-view table, .mini-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .table-view th, .table-view td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 .mini-table th { text-align: left; font-weight: 550; color: var(--ink); padding: 8px 0; border-bottom: 1px solid var(--line); }
-.mini-table td { padding: 8px 0 8px 12px; border-bottom: 1px solid var(--line); text-align: right; font-weight: 650; }
+.mini-table td { white-space: nowrap; padding: 8px 0 8px 12px; border-bottom: 1px solid var(--line); text-align: right; font-weight: 650; }
 .mini-table td.muted { font-weight: 400; font-size: 12px; }
 
 .donut { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
@@ -189,7 +189,8 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 .data-table .num { text-align: right; }
 .data-table .code { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; }
 .data-table .err { color: var(--bad); font-size: 12px; max-width: 320px; }
-.data-table + .data-table, .card + .card { margin-top: 16px; }
+.main > .card + .card { margin-top: 16px; }
+.kpis, .row-main, .row-bottom { align-items: stretch; }
 
 .disclaimer { margin-top: 28px; padding: 14px 16px; border-radius: 10px; background: #EEF1F5; color: var(--ink-2);
   font-size: 12.5px; border-left: 4px solid var(--navy); }

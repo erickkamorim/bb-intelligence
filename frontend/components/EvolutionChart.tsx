@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { number, quarterLabel, sourceLine } from "@/lib/format";
 import type { SeriesPoint } from "@/lib/types";
 import { IconDownload } from "./Icons";
@@ -43,6 +43,9 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
 }) {
   const [mode, setMode] = useState<Mode>("q");
   const [hover, setHover] = useState<number | null>(null);
+  const canvas = useRef<HTMLDivElement>(null);
+  // No celular o gráfico rola na horizontal: começa mostrando o período mais recente.
+  useEffect(() => { if (canvas.current) canvas.current.scrollLeft = canvas.current.scrollWidth; }, [mode]);
 
   const cols: Col[] = useMemo(() => {
     const all = [...profit, ...roe].map((p) => p.period_end).sort();
@@ -120,7 +123,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
         <button className="btn-ghost" onClick={csv}><IconDownload width={16} height={16} />CSV</button>
       </div>
 
-      <div className="chart-canvas">
+      <div className="chart-canvas" ref={canvas}>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" width="100%"
              aria-label={`Lucro líquido ajustado ${mode === "q" ? "por trimestre" : "por ano"}${showRoe ? " e RSPL" : ""}. Valores na tabela abaixo.`}>
           <text x={PADL} y={10} className="axis-title">Lucro líquido ajustado (R$ bi)</text>
