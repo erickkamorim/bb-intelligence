@@ -73,8 +73,8 @@ def load_csv(path: str | Path) -> list[ManualObservation]:
             continue
         if published < end:
             errors.append(f"linha {line}: published_at anterior ao fim do período")
-        if ind.unit == "pct" and not (-100 <= value <= 100):
-            errors.append(f"linha {line}: percentual fora de [-100, 100] — use 21.6 para 21,6%")
+        if ind.unit == "pct" and not (-500 <= value <= 500):
+            errors.append(f"linha {line}: percentual fora de [-500, 500] — use 21.6 para 21,6%")
         out.append(ManualObservation(code, start, end, value, ind.unit, r["source_url"].strip(),
                                      r["source_locator"].strip(), published, r["collected_by"].strip()))
     if errors:

@@ -92,6 +92,27 @@ def credit_segments(period: str | None = Query(None), db: Session = Depends(get_
     return envelope(q.credit_segments(db, p), period=p)
 
 
+@router.get("/results/bridge")
+def results_bridge(period: str | None = Query(None), db: Session = Depends(get_db)):
+    p = _period_or_latest(db, period)
+    return envelope(q.profit_bridge(db, p), period=p)
+
+
+@router.get("/alerts")
+def alerts(period: str | None = Query(None), db: Session = Depends(get_db)):
+    p = _period_or_latest(db, period)
+    return envelope(q.alerts(db, p), period=p,
+                    rules={"brl_pct": q.THRESH_PCT, "rate_pp": q.THRESH_PP,
+                           "note": "Variações acima do limite contra o trimestre anterior (ou ano anterior)."})
+
+
+@router.get("/notes")
+def notes(period: str | None = Query(None), db: Session = Depends(get_db)):
+    p = _period_or_latest(db, period)
+    return envelope(q.release_notes(p), period=p,
+                    note="Paráfrases curtas do release do RI, com a página de origem. Interpretação do banco, não da plataforma.")
+
+
 @router.get("/data-quality")
 def data_quality(db: Session = Depends(get_db)):
     return envelope(q.data_quality(db))

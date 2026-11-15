@@ -1,10 +1,9 @@
 import { brl, number, sourceLine, sourceShort } from "@/lib/format";
 import type { CreditSegments } from "@/lib/types";
+import { C } from "@/lib/theme";
 
 // Paleta categórica validada (CVD e normal) para 3 séries; "Outros" é neutro.
-const COLORS: Record<string, string> = {
-  carteira_pf: "#1D5BB0", carteira_pj: "#D29C00", carteira_agro: "#56A6E0", outros: "#C9CED6",
-};
+const COLORS: Record<string, string> = { carteira_pf: C.pf, carteira_pj: C.pj, carteira_agro: C.agro, outros: C.other };
 
 export function DonutChart({ data }: { data: CreditSegments }) {
   const segs = (data.segments ?? []).filter((s) => s.status === "ok" && s.value !== undefined);
@@ -28,7 +27,7 @@ export function DonutChart({ data }: { data: CreditSegments }) {
       <svg viewBox="0 0 180 180" width="180" height="180" role="img"
            aria-label={`Carteira de crédito expandida: ${segs.map((s) => `${s.label} ${number(s.share_pct ?? 0, 1)}%`).join(", ")}`}>
         {arcs.map(({ s, d }) => (
-          <path key={s.code} d={d} fill={COLORS[s.code] ?? "#C9CED6"}>
+          <path key={s.code} d={d} fill={COLORS[s.code] ?? C.other}>
             <title>{`${s.label}: ${brl(s.value!)} (${number(s.share_pct ?? 0, 1)}%)`}</title>
           </path>
         ))}
@@ -38,7 +37,7 @@ export function DonutChart({ data }: { data: CreditSegments }) {
       <ul className="legend">
         {segs.map((s) => (
           <li key={s.code}>
-            <span className="swatch" style={{ background: COLORS[s.code] ?? "#C9CED6" }} aria-hidden="true" />
+            <span className="swatch" style={{ background: COLORS[s.code] ?? C.other }} aria-hidden="true" />
             <span className="legend-label">{s.label}{s.derivation ? "*" : ""}</span>
             <span className="legend-value">{number(s.share_pct ?? 0, 1)}%</span>
             <span className="legend-sub">{brl(s.value!)}</span>

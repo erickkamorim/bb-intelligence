@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { number, quarterLabel, sourceLine } from "@/lib/format";
 import type { SeriesPoint } from "@/lib/types";
 import { IconDownload } from "./Icons";
+import { C } from "@/lib/theme";
 
-const BAR = "#1D5BB0";
-const BAR_SEL = "#002D5D";
-const LINE = "#1D5BB0";
-const GRID = "#E3E7ED";
-const INK2 = "#4A5568";
+const BAR = C.series;
+const BAR_SEL = C.highlight;
+const LINE = C.series;
+const GRID = C.grid;
+const INK2 = C.ink2;
 
 type Mode = "q" | "y";
 interface Col { key: string; label: string; profit?: number; roe?: number; complete: boolean; src?: SeriesPoint }
@@ -168,7 +169,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
                 <text key={`rm${c.key}`} x={cx(i)} y={yR(0) - 6} textAnchor="middle" className="tick muted-tick">s/ dado</text>
               ) : (
                 <g key={`rd${c.key}`}>
-                  <circle cx={cx(i)} cy={yR(c.roe)} r={6} fill="#fff" />
+                  <circle cx={cx(i)} cy={yR(c.roe)} r={6} fill={C.surface} />
                   <circle cx={cx(i)} cy={yR(c.roe)} r={4} fill={LINE} />
                   {i === cols.length - 1 && (
                     <text x={cx(i)} y={yR(c.roe) + 20} textAnchor="middle" className="value-label">{number(c.roe, 1)}%</text>
@@ -189,7 +190,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
                   onFocus={() => setHover(i)} onBlur={() => setHover(null)}
                   className="hit" />
           ))}
-          {hover !== null && <line x1={cx(hover)} x2={cx(hover)} y1={TOP} y2={H - 22} stroke="#9AA3AE" />}
+          {hover !== null && <line x1={cx(hover)} x2={cx(hover)} y1={TOP} y2={H - 22} stroke={C.muted} />}
         </svg>
         {h && (
           <div className="tooltip" style={{ left: `${(cx(hover!) / W) * 100}%` }} role="status">
@@ -204,7 +205,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
 
       <p className="chart-note">
         {mode === "q"
-          ? "Trimestre selecionado em azul-escuro. Lucro e RSPL em gráficos separados, cada um com sua escala."
+          ? "Trimestre selecionado em amarelo. Lucro e RSPL em gráficos separados, cada um com sua escala."
           : "Soma dos quatro trimestres; anos com trimestre faltando aparecem como incompletos. RSPL anual não é a soma dos trimestres e não é exibido."}
       </p>
       <details className="table-view">

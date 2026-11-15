@@ -5,10 +5,11 @@ import { downloadCsv, niceScale, quarterEnds } from "@/lib/chart";
 import { number, pct, quarterLabel, sourceLine } from "@/lib/format";
 import type { SeriesPoint } from "@/lib/types";
 import { IconDownload } from "./Icons";
+import { C } from "@/lib/theme";
 
-const BAR = "#1D5BB0";
-const BAR_SEL = "#002D5D";
-const GRID = "#E3E7ED";
+const BAR = C.series;
+const BAR_SEL = C.highlight;
+const GRID = C.grid;
 
 /** Barras trimestrais de uma única série, com lacunas explícitas ("s/ dado"). */
 type Kind = "brl_bi" | "pct";
@@ -64,7 +65,7 @@ export function BarSeries({ points, axisTitle, kind, digits = 1, csvName, select
           <text x={PADL} y={12} className="axis-title">{axisTitle}</text>
           {s.ticks.map((t) => (
             <g key={t}>
-              <line x1={PADL} x2={W - PADR} y1={y(t)} y2={y(t)} stroke={t === 0 ? "#B8C0CC" : GRID} />
+              <line x1={PADL} x2={W - PADR} y1={y(t)} y2={y(t)} stroke={t === 0 ? C.axis : GRID} />
               <text x={PADL - 8} y={y(t) + 4} textAnchor="end" className="tick">{tickFmt(t)}</text>
             </g>
           ))}

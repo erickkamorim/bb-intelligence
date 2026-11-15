@@ -1,31 +1,16 @@
+import { type Bridge, BridgeChart } from "@/components/BridgeChart";
 import { DonutChart } from "@/components/DonutChart";
 import { EvolutionChart } from "@/components/EvolutionChart";
-import { IconBars, IconCalendar, IconCard, IconCoins, IconDoc, IconGauge, IconPie, IconTarget, IconTrend } from "@/components/Icons";
+import { type AlertItem, AlertsPanel, headline, type NoteItem, NotesPanel } from "@/components/Insights";
+import { IconAlert, IconBars, IconCalendar, IconCard, IconCoins, IconDoc, IconGauge, IconPie, IconSpark, IconTarget, IconTrend } from "@/components/Icons";
 import { KpiCard } from "@/components/KpiCard";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, ErrorState } from "@/components/States";
 import { api } from "@/lib/api";
-import { date, number, pct, value } from "@/lib/format";
+import { date, pct } from "@/lib/format";
 import type { CreditSegments, IndicatorItem, PeriodItem, SeriesPoint } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
-
-function highlights(by: Record<string, IndicatorItem>): string[] {
-  const out: string[] = [];
-  const f = (code: string, label: string) => {
-    const i = by[code];
-    if (i?.status !== "ok" || i.value === undefined) return;
-    let s = `${label}: ${value(i.value, i.unit)}`;
-    if (i.yoy) s += ` (${i.yoy.value > 0 ? "+" : ""}${number(i.yoy.value, i.yoy.unit === "%" ? 1 : 2)}${i.yoy.unit === "%" ? "%" : " p.p."} a/a)`;
-    else if (i.qoq) s += ` (${i.qoq.value > 0 ? "+" : ""}${number(i.qoq.value, i.qoq.unit === "%" ? 1 : 2)}${i.qoq.unit === "%" ? "%" : " p.p."} t/t)`;
-    out.push(s);
-  };
-  f("lucro_liquido_ajustado", "Lucro líquido ajustado");
-  f("roe_ajustado", "RSPL");
-  f("inad_90", "Inadimplência +90 dias");
-  f("carteira_agro", "Carteira de agronegócio");
-  return out;
-}
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
   const sp = await searchParams;
@@ -41,16 +26,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const period = periods.data.find((p) => p.code === sp.period?.toUpperCase())?.code ?? periods.data[0].code;
   const sel = periods.data.find((p) => p.code === period)!;
 
-  const [ind, seg, profit, roe] = await Promise.all([
+  const [ind, seg, profit, roe, bridge, alerts, notes] = await Promise.all([
     api<IndicatorItem[]>(`/indicators?period=${period}`),
     api<CreditSegments>(`/credit/segments?period=${period}`),
     api<SeriesPoint[]>(`/series/lucro_liquido_ajustado?to=${sel.end}`),
     api<SeriesPoint[]>(`/series/roe_ajustado?to=${sel.end}`),
+    api<Bridge>(`/results/bridge?period=${period}`),
+    api<AlertItem[]>(`/alerts?period=${period}`),
+    api<NoteItem[]>(`/notes?period=${period}`),
   ]);
 
   const by: Record<string, IndicatorItem> = ind.ok ? Object.fromEntries(ind.data.map((i) => [i.code, i])) : {};
   const lastUpdate = ind.ok
     ? ind.data.map((i) => i.retrieved_at).filter((x): x is string => !!x).sort().at(-1) : undefined;
+  const br = bridge.ok ? bridge.data : null;
+  const head = headline(by.lucro_liquido_ajustado, br, sel.label);
   const ipca = by.ipca_mensal;
   const selic = by.selic_meta;
 
@@ -59,6 +49,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
       <PageHeader title="Visão Executiva" subtitle="Desempenho e evolução dos principais indicadores do Banco do Brasil."
                   periods={periods.data} period={period} lastUpdate={lastUpdate}
                   sources="RI do Banco do Brasil · CVM · Banco Central (SGS)" />
+
+      {head && (
+        <section className="headline" aria-label="Resumo do trimestre">
+          <IconSpark />
+          <p>{head}</p>
+        </section>
+      )}
 
       {!ind.ok ? <ErrorState message={ind.error} /> : (
         <section className="kpis" aria-label="Indicadores principais">
@@ -69,6 +66,24 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
                    note="Quanto menor, mais eficiente." />
         </section>
       )}
+
+      <section className="row-main">
+        <article className="card">
+          <header className="card-head">
+            <IconBars /><div><h2>Por que o lucro mudou</h2>
+              <p className="muted">Ponte do lucro ajustado, linha a linha da DRE gerencial</p></div>
+          </header>
+          {br && br.status === "ok" ? <BridgeChart data={br} toLabel={sel.label} />
+            : <EmptyState title="Ponte indisponível" message={br?.reason ?? (bridge.ok ? "" : bridge.error)} />}
+        </article>
+        <article className="card">
+          <header className="card-head">
+            <IconAlert /><div><h2>Alertas do trimestre</h2>
+              <p className="muted">Variações fora do comum contra {`o trimestre anterior`}</p></div>
+          </header>
+          {alerts.ok ? <AlertsPanel items={alerts.data} /> : <ErrorState message={alerts.error} />}
+        </article>
+      </section>
 
       <section className="row-main">
         <article className="card">
@@ -109,11 +124,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
           <p className="chart-note">Banco Central — SGS (séries 432 e 433). IPCA 12m calculado a partir da variação mensal.</p>
         </article>
         <article className="card">
-          <header className="card-head"><IconDoc /><h2>Destaques do {sel.label}</h2></header>
-          {highlights(by).length ? (
-            <ul className="highlights">{highlights(by).map((h) => <li key={h}>{h}</li>)}</ul>
-          ) : <EmptyState title="Sem destaques" message="Nenhum indicador gerencial publicado para o período." />}
-          <p className="chart-note">Fatos extraídos dos indicadores carregados; sem interpretação.</p>
+          <header className="card-head"><IconDoc /><div><h2>O que o banco diz</h2>
+            <p className="muted">Explicações do release, resumidas · interpretação do BB</p></div></header>
+          {notes.ok ? <NotesPanel items={notes.data} /> : <ErrorState message={notes.error} />}
         </article>
         <article className="card">
           <header className="card-head"><IconCalendar /><h2>Próximos eventos</h2></header>
