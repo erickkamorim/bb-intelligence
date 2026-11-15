@@ -107,6 +107,16 @@ def cmd_cvm_load(args) -> int:
     return 0
 
 
+def cmd_cvm_derive_q4(args) -> int:
+    from .load import derive_fourth_quarter, etl_run
+    with _session() as s, etl_run(s, f"cvm_q4_{args.year}") as run:
+        n = derive_fourth_quarter(s, args.year)
+        run.rows_inserted = n
+        s.commit()
+    print(f"OK: {n} observações de 4T{args.year} derivadas (DFP − 9M)")
+    return 0
+
+
 def cmd_sgs_load(args) -> int:
     import hashlib
     import json
@@ -201,6 +211,10 @@ def build_parser() -> argparse.ArgumentParser:
     cl.add_argument("--allow-unconfirmed", action="store_true",
                     help="somente para desenvolvimento: carrega mapeamentos ainda não confirmados")
     cl.set_defaults(func=cmd_cvm_load)
+
+    cq = c.add_parser("derive-q4")
+    cq.add_argument("--year", type=int, required=True)
+    cq.set_defaults(func=cmd_cvm_derive_q4)
 
     g = sub.add_parser("sgs").add_subparsers(dest="sub", required=True)
     gl = g.add_parser("load")

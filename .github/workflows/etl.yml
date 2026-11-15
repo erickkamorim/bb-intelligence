@@ -1,9 +1,15 @@
-name: etl-agendado
-# Desligado até a Etapa 4: exige DATABASE_URL de produção nos secrets do repositório.
+name: etl-carga
+# Roda pelo celular: Actions → etl-carga → Run workflow.
+# Usa o segredo DATABASE_URL (Neon). Agendamento diário fica desligado até a Etapa 4.
 on:
   workflow_dispatch:
+    inputs:
+      itr_years: { description: "Anos de ITR (separados por espaço)", default: "2025 2026" }
+      dfp_years: { description: "Anos de DFP (para o 4T)", default: "2025" }
+      sgs_start: { description: "Início das séries do BCB", default: "2016-01-01" }
   # schedule:
-  #   - cron: "17 9 * * 1-5"   # 06h17 BRT, dias úteis
+  #   - cron: "17 9 * * 1-5"
+concurrency: { group: etl, cancel-in-progress: false }
 jobs:
   etl:
     runs-on: ubuntu-latest
@@ -15,8 +21,18 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt
-      - run: alembic upgrade head && python -m etl seed
-      - run: python -m etl cvm load --doc ITR --year $(date +%Y)
-      - run: python -m etl sgs load --indicator selic_meta --start 2016-01-01
-      - run: python -m etl sgs load --indicator ipca_mensal --start 2016-01-01
-      - run: python -m etl quality
+      - name: Conferir segredo
+        run: test -n "$DATABASE_URL" || (echo "Segredo DATABASE_URL ausente" && exit 1)
+      - name: Migrations e cadastro
+        run: alembic upgrade head && python -m etl seed
+      - name: ITR
+        run: for y in ${{ inputs.itr_years }}; do python -m etl cvm load --doc ITR --year $y; done
+      - name: DFP e 4º trimestre
+        run: for y in ${{ inputs.dfp_years }}; do python -m etl cvm load --doc DFP --year $y && python -m etl cvm derive-q4 --year $y; done
+      - name: Séries do Banco Central
+        run: |
+          python -m etl sgs load --indicator selic_meta --start ${{ inputs.sgs_start }}
+          python -m etl sgs load --indicator ipca_mensal --start ${{ inputs.sgs_start }}
+      - name: Qualidade
+        if: always()
+        run: python -m etl quality
