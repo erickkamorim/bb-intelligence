@@ -19,6 +19,7 @@ jobs:
         working-directory: backend
         run: |
           pip install -r requirements.txt
+          python -m etl seed && python -m etl ri load --file ../data/manual/ri_bb.csv   # idempotente
           nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/api.log 2>&1 &
           for i in $(seq 1 30); do curl -sf 127.0.0.1:8000/api/v1/health && break; sleep 1; done
       - name: Frontend
@@ -36,6 +37,9 @@ jobs:
           check "/" "Lucro líquido ajustado"
           check "/" "R\$ 1,27 bi"
           check "/" "Projeto independente, não oficial"
+          check "/" "Por que o lucro mudou"
+          check "/" "Alertas do trimestre"
+          check "/" "O que o banco diz"
           check "/?period=2026Q2" "R\$ 3,91 bi"
           check "/qualidade" "Cobertura por indicador"
           check "/resultados" "Comparativo trimestral"

@@ -4,9 +4,10 @@ import { useMemo, useState } from "react";
 import { downloadCsv, niceScale } from "@/lib/chart";
 import { date, number } from "@/lib/format";
 import { IconDownload } from "./Icons";
+import { C } from "@/lib/theme";
 
-const LINE = "#1D5BB0";
-const GRID = "#E3E7ED";
+const LINE = C.series;
+const GRID = C.grid;
 
 export interface LinePoint { date: string; value: number }
 
@@ -72,7 +73,7 @@ export function LineSeries({ points, axisTitle, digits = 2, csvName, windows = [
           <text x={PADL} y={12} className="axis-title">{axisTitle}</text>
           {s.ticks.map((t) => (
             <g key={t}>
-              <line x1={PADL} x2={W - PADR} y1={y(t)} y2={y(t)} stroke={t === 0 ? "#B8C0CC" : GRID} />
+              <line x1={PADL} x2={W - PADR} y1={y(t)} y2={y(t)} stroke={t === 0 ? C.axis : GRID} />
               <text x={PADL - 8} y={y(t) + 4} textAnchor="end" className="tick">{fmt(t)}</text>
             </g>
           ))}
@@ -82,11 +83,11 @@ export function LineSeries({ points, axisTitle, digits = 2, csvName, windows = [
               ? <text key={yy} x={xx} y={H - 8} textAnchor="middle" className="tick">{yy}</text> : null;
           })}
           <path d={path} fill="none" stroke={LINE} strokeWidth={2} strokeLinejoin="round" />
-          <circle cx={x(last.date)} cy={y(last.value)} r={6} fill="#fff" />
+          <circle cx={x(last.date)} cy={y(last.value)} r={6} fill={C.surface} />
           <circle cx={x(last.date)} cy={y(last.value)} r={4} fill={LINE} />
           <text x={x(last.date) - 8} y={y(last.value) - 10} textAnchor="end" className="value-label">{fmt(last.value)}</text>
-          {h && <line x1={x(h.date)} x2={x(h.date)} y1={TOP} y2={TOP + H1} stroke="#9AA3AE" />}
-          {h && <circle cx={x(h.date)} cy={y(h.value)} r={4} fill={LINE} stroke="#fff" strokeWidth={2} />}
+          {h && <line x1={x(h.date)} x2={x(h.date)} y1={TOP} y2={TOP + H1} stroke={C.muted} />}
+          {h && <circle cx={x(h.date)} cy={y(h.value)} r={4} fill={LINE} stroke={C.surface} strokeWidth={2} />}
           <rect x={PADL} y={TOP} width={W - PADL - PADR} height={H1} fill="transparent"
                 onPointerMove={onMove} onPointerLeave={() => setHover(null)} />
         </svg>

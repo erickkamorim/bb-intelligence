@@ -43,6 +43,19 @@ export function Sidebar() {
 
   return (
     <>
+      <nav className="bottomnav" aria-label="Navegação rápida">
+        {NAV.slice(0, 4).map(({ href, label, Icon }) => {
+          const active = href === "/" ? path === "/" : path.startsWith(href);
+          return (
+            <Link key={href} href={href} className={`bn-item${active ? " is-active" : ""}`} aria-current={active ? "page" : undefined}>
+              <Icon /><span>{label.split(" ")[0]}</span>
+            </Link>
+          );
+        })}
+        <button className="bn-item" onClick={() => setOpen(true)} aria-label="Mais seções" aria-expanded={open}>
+          <IconMenu /><span>Mais</span>
+        </button>
+      </nav>
       <div className="mobilebar">
         <button className="iconbtn" onClick={() => setOpen(true)} aria-label="Abrir menu" aria-expanded={open}
                 aria-controls="sidebar">

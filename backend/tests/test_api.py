@@ -17,6 +17,12 @@ from app.main import app  # noqa: E402
 from etl.load import ObsIn, get_or_create_document, seed, upsert_observations  # noqa: E402
 
 Q = "quarter"
+# componentes FICTÍCIOS que somam o lucro: 2T26 = 400, 3T26 = 100
+COMP_2T = {"margem_financeira_bruta": 1000.0, "custo_credito": -500.0, "receitas_servicos": 200.0,
+           "despesas_administrativas": -250.0, "outras_receitas_despesas_op": -20.0, "provisoes": -10.0,
+           "resultado_nao_operacional": 0.0, "ir_csll": 10.0, "participacoes_estatutarias": -10.0,
+           "participacoes_minoritarias": -20.0}
+COMP_3T = {**COMP_2T, "custo_credito": -800.0}
 
 
 @pytest.fixture
@@ -39,7 +45,10 @@ def client():
             ObsIn("carteira_pf", date(2026, 7, 1), date(2026, 9, 30), Q, 300.0),
             ObsIn("carteira_pj", date(2026, 7, 1), date(2026, 9, 30), Q, 350.0),
             ObsIn("carteira_agro", date(2026, 7, 1), date(2026, 9, 30), Q, 300.0),
-        ])
+            ObsIn("inad_90", date(2026, 4, 1), date(2026, 6, 30), Q, 5.6),
+            ObsIn("inad_90", date(2026, 7, 1), date(2026, 9, 30), Q, 6.1),
+        ] + [ObsIn(c, date(2026, 4, 1), date(2026, 6, 30), Q, v2) for c, v2 in COMP_2T.items()]
+          + [ObsIn(c, date(2026, 7, 1), date(2026, 9, 30), Q, v3) for c, v3 in COMP_3T.items()])
         sgs = get_or_create_document(s, "bcb_sgs", "SGS", "https://api.bcb.gov.br/x", "h-sgs", now)
         upsert_observations(s, sgs, [ObsIn("ipca_mensal", None, date(2026, m, 1), "monthly", 0.5)
                                      for m in range(1, 10)] +
@@ -116,3 +125,27 @@ def test_series_compact(client):
     body = client.get("/api/v1/series/ipca_mensal?compact=true").json()
     assert set(body["data"][0]) == {"period_end", "value"}
     assert body["meta"]["source"]["source_code"] == "bcb_sgs"
+
+
+def test_bridge_closes(client):
+    d = client.get("/api/v1/results/bridge?period=2026Q3").json()["data"]
+    assert d["status"] == "ok" and d["from_period"] == "2026Q2"
+    assert d["start"] == 400.0 and d["end"] == 100.0 and d["closes"] is True
+    assert d["steps"][0] == {"code": "custo_credito", "label": "Custo do crédito", "delta": -300.0}
+
+
+def test_bridge_missing_period(client):
+    d = client.get("/api/v1/results/bridge?period=2025Q3").json()["data"]
+    assert d["status"] == "missing"
+
+
+def test_alerts_flag_adverse_moves(client):
+    al = {a["code"]: a for a in client.get("/api/v1/alerts?period=2026Q3").json()["data"]}
+    assert al["inad_90"]["tone"] == "negative" and al["inad_90"]["delta_unit"] == "p.p."
+    assert al["custo_credito"]["tone"] == "negative" and al["custo_credito"]["delta"] == 60.0
+    assert al["lucro_liquido_ajustado"]["compare"] == "t/t"
+
+
+def test_notes_endpoint(client):
+    body = client.get("/api/v1/notes?period=2026Q3").json()
+    assert body["data"] and all(n["source_locator"] for n in body["data"])

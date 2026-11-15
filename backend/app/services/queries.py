@@ -210,3 +210,117 @@ def data_quality(db: Session) -> dict:
                   "error": r.error_message} for r in runs],
         "checked_at": datetime.now(timezone.utc),
     }
+
+
+# ---------------------------------------------------------------- ponte do lucro
+BRIDGE = [
+    ("margem_financeira_bruta", "Margem financeira"),
+    ("custo_credito", "Custo do crédito"),
+    ("receitas_servicos", "Serviços"),
+    ("despesas_administrativas", "Despesas adm."),
+    ("outras_receitas_despesas_op", "Outras operacionais"),
+    ("provisoes", "Provisões"),
+    ("resultado_nao_operacional", "Não operacional"),
+    ("ir_csll", "IR/CSLL"),
+    ("participacoes_estatutarias", "Part. estatutárias"),
+    ("participacoes_minoritarias", "Minoritários"),
+]
+
+
+def _quarter_values(db: Session, code: str) -> dict[date, tuple]:
+    ind = indicator_by_code(db, code)
+    if ind is None:
+        return {}
+    return {o.period_end: (float(o.value), o, d, s) for o, d, s in observations(db, ind, period_type="quarter")}
+
+
+def profit_bridge(db: Session, period: str) -> dict:
+    """Do lucro ajustado do trimestre comparável anterior ao atual, linha a linha da DRE gerencial."""
+    _, end = parse_period_code(period)
+    profit = _quarter_values(db, "lucro_liquido_ajustado")
+    comps = {c: _quarter_values(db, c) for c, _ in BRIDGE}
+    complete = sorted(e for e in profit if all(e in comps[c] for c, _ in BRIDGE))
+    if end not in complete:
+        return {"status": "missing", "period": period,
+                "reason": "Componentes da DRE gerencial não carregados para este trimestre."}
+    prevs = [e for e in complete if e < end]
+    if not prevs:
+        return {"status": "missing", "period": period, "reason": "Sem trimestre anterior comparável."}
+    prev = prevs[-1]
+    steps = [{"code": c, "label": lbl, "delta": comps[c][end][0] - comps[c][prev][0]} for c, lbl in BRIDGE]
+    start_v, end_v = profit[prev][0], profit[end][0]
+    residual = end_v - start_v - sum(st["delta"] for st in steps)
+    _, o, d, s = profit[end]
+    return {"status": "ok", "period": period, "from_period": period_code(prev), "from_end": prev,
+            "start": start_v, "end": end_v, "steps": sorted(steps, key=lambda st: st["delta"]),
+            "residual": residual, "unit": "BRL", "closes": abs(residual) <= 5e6, "source": source_meta(o, d, s)}
+
+
+# ---------------------------------------------------------------- alertas
+# polaridade: True = subir é bom; False = subir é ruim. Linhas de custo (negativas) comparam o tamanho.
+POLARITY = {
+    "lucro_liquido_ajustado": True, "roe_ajustado": True, "indice_eficiencia": False, "inad_90": False,
+    "cobertura_90": True, "carteira_credito_ampliada": True, "carteira_pf": True, "carteira_pj": True,
+    "carteira_agro": True, "margem_financeira_bruta": True, "receitas_servicos": True,
+    "custo_credito": False, "despesas_administrativas": False, "lucro_liquido_contabil": True,
+}
+COST = {"custo_credito", "despesas_administrativas"}
+THRESH_PCT = 8.0   # variação relativa mínima para valores em R$
+THRESH_PP = 0.3    # variação mínima em p.p. para taxas
+
+
+def alerts(db: Session, period: str) -> list[dict]:
+    _, end = parse_period_code(period)
+    prev_q, prev_y = _shift_quarters(end, 1), _shift_quarters(end, 4)
+    out = []
+    for code, up_good in POLARITY.items():
+        vals = _quarter_values(db, code)
+        if end not in vals:
+            continue
+        meta = INDICATORS[code]
+        cur, o, d, s = vals[end]
+        hist = [abs(v) if code in COST else v for e, (v, *_rest) in vals.items() if e <= end]
+        cur_cmp = abs(cur) if code in COST else cur
+        for ref, label in ((prev_q, "t/t"), (prev_y, "a/a")):
+            if ref not in vals:
+                continue
+            base = vals[ref][0]
+            if meta.unit.startswith("pct"):
+                delta, unit, big = cur - base, "p.p.", abs(cur - base) >= THRESH_PP
+            else:
+                a, b = (abs(cur), abs(base)) if code in COST else (cur, base)
+                if b == 0:
+                    continue
+                delta, unit = (a / b - 1) * 100, "%"
+                big = abs(delta) >= THRESH_PCT
+            if not big:
+                continue
+            rising = delta > 0
+            good = rising == up_good
+            extreme = None
+            if len(hist) >= 3:
+                noun = "maior custo" if code in COST else "maior valor"
+                if cur_cmp == max(hist):
+                    extreme = f"{noun} da série carregada"
+                elif cur_cmp == min(hist):
+                    extreme = ("menor custo" if code in COST else "menor valor") + " da série carregada"
+            out.append({"code": code, "name": meta.name, "unit": meta.unit, "value": cur, "compare": label,
+                        "compare_period": period_code(ref), "delta": round(delta, 2), "delta_unit": unit,
+                        "direction": "up" if rising else "down", "tone": "positive" if good else "negative",
+                        "extreme": extreme, **source_meta(o, d, s)})
+            break  # um alerta por indicador: t/t tem prioridade
+    order = {"negative": 0, "positive": 1}
+    return sorted(out, key=lambda a: (order[a["tone"]], -abs(a["delta"]) if a["delta_unit"] == "%" else -abs(a["delta"]) * 20))
+
+
+# ---------------------------------------------------------------- notas do release
+def release_notes(period: str) -> list[dict]:
+    import csv
+    from pathlib import Path
+
+    # Fica dentro do backend: o Render publica só a pasta backend/
+    path = Path(__file__).resolve().parents[1] / "data" / "ri_notes.csv"
+    if not path.exists():
+        return []
+    with open(path, encoding="utf-8") as fh:
+        return [r for r in csv.DictReader(fh) if r["period"].upper() == period.upper()]
