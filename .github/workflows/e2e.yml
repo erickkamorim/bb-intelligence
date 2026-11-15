@@ -1,6 +1,8 @@
 name: e2e
 # Fluxo ponta a ponta: Neon -> API -> Next.js. Sobe os dois serviços e verifica as páginas renderizadas.
-on: { workflow_dispatch: {} }
+on:
+  workflow_dispatch: {}
+  pull_request: { paths: ["frontend/**", "backend/app/**"] }
 jobs:
   e2e:
     runs-on: ubuntu-latest
