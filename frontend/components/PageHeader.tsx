@@ -1,4 +1,4 @@
-import { dateTime } from "@/lib/format";
+import { date } from "@/lib/format";
 import type { PeriodItem } from "@/lib/types";
 import { IconClock } from "./Icons";
 import { PeriodSelect } from "./PeriodSelect";
@@ -17,7 +17,8 @@ export function PageHeader({ title, subtitle, periods, period, lastUpdate, sourc
         {periods && period && <PeriodSelect periods={periods} value={period} />}
         {lastUpdate && (
           <p className="last-update"><IconClock width={16} height={16} />
-            <span>Última coleta<br /><strong>{dateTime(lastUpdate)}</strong></span></p>
+            <span>Base atualizada em<br /><strong>{date(lastUpdate)}</strong>
+              <span className="freq">Atualização diária · não é tempo real</span></span></p>
         )}
       </div>
     </header>

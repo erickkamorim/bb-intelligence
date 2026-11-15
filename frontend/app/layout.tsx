@@ -22,7 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
             <footer className="disclaimer" role="note">
               Projeto independente, não oficial e não afiliado ao Banco do Brasil. Informações para fins
-              analíticos, não recomendação de investimento.
+              analíticos, não recomendação de investimento. Os dados são atualizados periodicamente (dias úteis),
+              não em tempo real: cada número mostra a fonte e a data de publicação.
             </footer>
           </main>
         </div>
