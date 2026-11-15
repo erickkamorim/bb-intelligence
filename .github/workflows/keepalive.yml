@@ -1,0 +1,13 @@
+name: keepalive
+# Mantém a API gratuita do Render acordada no horário de uso (07h–23h de Brasília),
+# evitando a espera de até 1 minuto na primeira visita.
+on:
+  schedule:
+    - cron: "*/12 10-23,0-2 * * *"
+  workflow_dispatch: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl -s -m 90 -o /dev/null -w "API %{http_code} em %{time_total}s\n" https://bb-intelligence-api.onrender.com/api/v1/health || true
