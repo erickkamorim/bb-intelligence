@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   IconBars, IconChevronLeft, IconClose, IconDatabase, IconGrid, IconMenu, IconShield, IconSpark,
-  IconTarget, IconTrend,
+  IconScale, IconTarget, IconTrend,
 } from "./Icons";
 
 const NAV = [
@@ -13,6 +13,7 @@ const NAV = [
   { href: "/resultados", label: "Resultados Financeiros", Icon: IconBars },
   { href: "/credito", label: "Crédito e Risco", Icon: IconShield },
   { href: "/mercado", label: "Mercado e Ações", Icon: IconTrend },
+  { href: "/pares", label: "Comparar Bancos", Icon: IconScale },
   { href: "/previsoes", label: "Previsões", Icon: IconTarget },
   { href: "/ia", label: "IA Insights", Icon: IconSpark },
   { href: "/qualidade", label: "Qualidade dos Dados", Icon: IconDatabase },

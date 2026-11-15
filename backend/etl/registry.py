@@ -55,8 +55,8 @@ SOURCES: dict[str, Source] = {
         name="Banco Central — IF.data (API Olinda/OData)",
         url="https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata/",
         license_notes="ODbL (Open Data Commons Open Database License)",
-        verified_on="2026-11-14",
-        notes="Recursos IfDataCadastro e IfDataValores. Parâmetros ainda NÃO validados — Etapa 1b.",
+        verified_on="2026-11-15",
+        notes="IfDataValores(AnoMes, TipoInstituicao=1, Relatorio='1') validado em 15/11/2026; valores em reais.",
     ),
     "ri_bb": Source(
         code="ri_bb",

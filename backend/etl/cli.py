@@ -199,6 +199,46 @@ def cmd_show(args) -> int:
     return 0
 
 
+def cmd_ifdata_load(args) -> int:
+    import hashlib
+    import json
+
+    from . import ifdata
+    from .load import etl_run, get_or_create_document, upsert_peer_values
+
+    months = args.months or _recent_quarter_months(args.quarters)
+    now = datetime.now(timezone.utc)
+    total_i = total_u = 0
+    with _session() as s, etl_run(s, "ifdata_pares") as run:
+        for m in months:
+            rows = ifdata.fetch(m, _requests_session())
+            if not rows:
+                print(f"{m}: ainda não publicado")
+                continue
+            payload = json.dumps(sorted((r.cod_inst, r.metric, r.value) for r in rows)).encode()
+            doc = get_or_create_document(s, "bcb_ifdata", "IFDATA_RESUMO", ifdata.build_url(m),
+                                         hashlib.sha256(payload).hexdigest(), now, period=m,
+                                         locator="IfDataValores, TipoInstituicao=1 (prudencial), Relatório 1 (Resumo)")
+            i, u = upsert_peer_values(s, doc, rows)
+            total_i, total_u = total_i + i, total_u + u
+            print(f"{m}: {len(rows)} valores ({i} novos, {u} atualizados)")
+        run.rows_inserted, run.rows_updated = total_i, total_u
+        s.commit()
+    return 0
+
+
+def _recent_quarter_months(n: int) -> list[str]:
+    d = date.today()
+    y, q = d.year, (d.month - 1) // 3 + 1
+    out = []
+    for _ in range(n):
+        q -= 1
+        if q == 0:
+            y, q = y - 1, 4
+        out.append(f"{y}{q * 3:02d}")
+    return sorted(out)
+
+
 def cmd_quality(_args) -> int:
     from sqlalchemy import select
 
@@ -250,6 +290,12 @@ def build_parser() -> argparse.ArgumentParser:
     rl = r.add_parser("load")
     rl.add_argument("--file", required=True)
     rl.set_defaults(func=cmd_ri_load)
+
+    f = sub.add_parser("ifdata").add_subparsers(dest="sub", required=True)
+    fl = f.add_parser("load")
+    fl.add_argument("--months", nargs="*", help="AAAAMM, ex.: 202603 202606 (padrão: últimos trimestres)")
+    fl.add_argument("--quarters", type=int, default=9)
+    fl.set_defaults(func=cmd_ifdata_load)
 
     sh = sub.add_parser("show")
     sh.add_argument("--indicator", required=True)

@@ -35,6 +35,8 @@ jobs:
         run: |
           python -m etl sgs load --indicator selic_meta --start ${{ inputs.sgs_start }}
           python -m etl sgs load --indicator ipca_mensal --start ${{ inputs.sgs_start }}
+      - name: Pares (IF.data)
+        run: python -m etl ifdata load
       - name: Qualidade
         if: always()
         run: |

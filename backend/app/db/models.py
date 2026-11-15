@@ -115,3 +115,18 @@ class ForecastRun(Base):
     upper_80: Mapped[float | None] = mapped_column(Float)
     actual: Mapped[float | None] = mapped_column(Float)
     backtest_metrics: Mapped[dict | None] = mapped_column(JsonType)
+
+
+class PeerValue(Base):
+    """Valores do IF.data por instituição (comparação entre bancos)."""
+    __tablename__ = "peer_values"
+    __table_args__ = (UniqueConstraint("cod_inst", "period_end", "metric", name="uq_peer_value"),)
+    id: Mapped[int] = mapped_column(BigId, primary_key=True)
+    cod_inst: Mapped[str] = mapped_column(String(12))
+    institution: Mapped[str] = mapped_column(String(80))
+    period_end: Mapped[date] = mapped_column(Date)
+    metric: Mapped[str] = mapped_column(String(40))
+    value: Mapped[float] = mapped_column(Numeric(24, 6))
+    unit: Mapped[str] = mapped_column(String(10))
+    source_document_id: Mapped[int] = mapped_column(ForeignKey("documents.id"))
+    retrieved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

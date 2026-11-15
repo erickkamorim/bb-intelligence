@@ -324,3 +324,80 @@ def release_notes(period: str) -> list[dict]:
         return []
     with open(path, encoding="utf-8") as fh:
         return [r for r in csv.DictReader(fh) if r["period"].upper() == period.upper()]
+
+
+# ---------------------------------------------------------------- comparação com pares (IF.data)
+def peers(db: Session, period: str | None) -> dict:
+    from app.db.models import PeerValue
+    from etl.ifdata import BANKS, BB_CODE, quarterly_profit
+
+    rows = db.execute(select(PeerValue, Document).join(Document, PeerValue.source_document_id == Document.id)).all()
+    if not rows:
+        return {"status": "missing", "periods": [], "reason": "IF.data ainda não carregado."}
+    data: dict[str, dict[str, dict[date, float]]] = {}
+    docs: dict[date, Document] = {}
+    for pv, doc in rows:
+        data.setdefault(pv.cod_inst, {}).setdefault(pv.metric, {})[pv.period_end] = float(pv.value)
+        docs[pv.period_end] = doc
+    ends = sorted(docs, reverse=True)
+    if period:
+        _, end = parse_period_code(period)
+        if end not in docs:
+            return {"status": "missing", "periods": [period_code(e) for e in ends],
+                    "reason": f"IF.data sem dados para {period}."}
+    else:
+        end = ends[0]
+
+    def roe_series(cod: str) -> dict[date, float]:
+        q = quarterly_profit(data[cod].get("lucro_semestre_acum", {}))
+        pl = data[cod].get("patrimonio_liquido", {})
+        out = {}
+        for e, (v, _) in q.items():
+            prev = _shift_quarters(e, 1)
+            base = (pl[e] + pl[prev]) / 2 if prev in pl and e in pl else pl.get(e)
+            if base:
+                out[e] = v * 4 / base * 100
+        return out
+
+    banks = []
+    for cod, name in BANKS.items():
+        m = data.get(cod, {})
+        q = quarterly_profit(m.get("lucro_semestre_acum", {}))
+        roe = roe_series(cod) if cod in data else {}
+        cart = m.get("carteira_credito", {})
+        yago = _shift_quarters(end, 4)
+        banks.append({
+            "cod_inst": cod, "name": name, "is_bb": cod == BB_CODE,
+            "ativo_total": m.get("ativo_total", {}).get(end),
+            "carteira_credito": cart.get(end),
+            "carteira_yoy_pct": ((cart[end] / cart[yago] - 1) * 100) if end in cart and yago in cart else None,
+            "patrimonio_liquido": m.get("patrimonio_liquido", {}).get(end),
+            "lucro_trimestre": q.get(end, (None, None))[0],
+            "lucro_derivacao": q.get(end, (None, None))[1],
+            "roe_anualizado": roe.get(end),
+            "basileia": m.get("basileia", {}).get(end),
+            "roe_hist": [{"period_end": e, "value": v} for e, v in sorted(roe.items())],
+            "lucro_hist": [{"period_end": e, "value": v} for e, (v, _) in sorted(q.items())],
+        })
+
+    def rank(key: str, higher_better: bool = True) -> dict:
+        vals = [(b[key], b["cod_inst"]) for b in banks if b[key] is not None]
+        vals.sort(reverse=higher_better)
+        pos = next((i + 1 for i, (_, c) in enumerate(vals) if c == BB_CODE), None)
+        return {"position": pos, "of": len(vals)}
+
+    doc = docs[end]
+    return {
+        "status": "ok", "period": period_code(end), "period_end": end,
+        "periods": [period_code(e) for e in ends],
+        "banks": banks,
+        "bb_rank": {k: rank(k) for k in ("ativo_total", "carteira_credito", "lucro_trimestre", "roe_anualizado",
+                                          "basileia", "carteira_yoy_pct")},
+        "source": {"source": "Banco Central — IF.data", "source_code": "bcb_ifdata", "url": doc.url,
+                   "locator": doc.locator, "retrieved_at": doc.retrieved_at},
+        "notes": [
+            "Conglomerados prudenciais do IF.data: perímetro regulatório, diferente do consolidado da CVM e do gerencial do RI.",
+            "Lucro do trimestre: o IF.data acumula no semestre; 2T e 4T são calculados pela diferença.",
+            "ROE anualizado = lucro do trimestre × 4 / patrimônio líquido médio (cálculo da plataforma).",
+        ],
+    }
