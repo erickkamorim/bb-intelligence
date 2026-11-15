@@ -49,6 +49,25 @@ python -m etl seed              # cadastra fontes e dicionário de indicadores
 
 Rodar qualquer comando duas vezes não duplica dados; um valor diferente para o mesmo período vira uma nova revisão (`revision+1`), preservando o histórico.
 
+## API (Etapa 2)
+
+```bash
+cd backend
+uvicorn app.main:app --reload          # http://localhost:8000/docs
+```
+
+| Endpoint | O que devolve |
+|---|---|
+| `GET /api/v1/health` | status da API e do banco |
+| `GET /api/v1/periods` | trimestres disponíveis (mais recente primeiro) |
+| `GET /api/v1/indicators?period=2026Q3` | todos os indicadores no período, com variação t/t e a/a, fonte e status |
+| `GET /api/v1/series/{code}?from=&to=&period_type=` | série histórica com fonte por ponto |
+| `GET /api/v1/credit/segments?period=2026Q3` | carteira por segmento e participação |
+| `GET /api/v1/data-quality` | cobertura, atraso (`ok`/`stale`/`missing`) e últimas execuções do ETL |
+| `GET /api/v1/events` | agenda oficial — vazia com `status: not_collected` até ser integrada |
+
+Toda resposta tem `data` e `meta` (versão, horário e aviso de projeto não oficial). Erros vêm como `{"error": {"code", "message"}}`. Indicador sem dado aparece com `status: "missing"`, nunca como zero. O workflow **api-smoke** sobe a API no GitHub lendo o Neon e chama todos os endpoints.
+
 ## Variáveis de ambiente
 
 | Variável | Padrão | Uso |
@@ -57,6 +76,7 @@ Rodar qualquer comando duas vezes não duplica dados; um valor diferente para o 
 | `RAW_DATA_DIR` | `./data/raw` | arquivos brutos e `manifest.jsonl` |
 | `HTTP_TIMEOUT` | `120` | segundos |
 | `HTTP_USER_AGENT` | `BB-Intelligence-ETL/0.1` | identifique-se para os portais |
+| `ALLOWED_ORIGINS` | `http://localhost:3000` | domínios do frontend liberados no CORS (separados por vírgula) |
 
 ## Regras do projeto
 

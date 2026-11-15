@@ -1,0 +1,23 @@
+name: api-smoke
+# Sobe a API nos servidores do GitHub, lendo o Neon, e chama cada endpoint.
+on: { workflow_dispatch: {} }
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: backend } }
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - run: |
+          uvicorn app.main:app --port 8000 &
+          for i in $(seq 1 30); do curl -sf localhost:8000/api/v1/health && break; sleep 1; done
+          echo
+          for path in health periods "indicators?period=2026Q3" "credit/segments?period=2026Q3" \
+                      "series/lucro_liquido_ajustado" "series/selic_meta?from=2026-10-01" data-quality events; do
+            echo "=== GET /api/v1/$path"
+            curl -sS -w "\nHTTP %{http_code}\n" "localhost:8000/api/v1/$path" | python -c "import sys,json; raw=sys.stdin.read(); body,code=raw.rsplit('HTTP',1); print(json.dumps(json.loads(body), ensure_ascii=False)[:1500]); print('HTTP',code.strip())"
+          done
