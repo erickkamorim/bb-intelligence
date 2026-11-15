@@ -26,7 +26,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
   const period = periods.data.find((p) => p.code === sp.period?.toUpperCase())?.code ?? periods.data[0].code;
   const sel = periods.data.find((p) => p.code === period)!;
 
-  const [ind, seg, profit, roe, bridge, alerts, notes] = await Promise.all([
+  const [ind, seg, profit, roe, bridge, alerts, notes, profitYtd, roeYtd] = await Promise.all([
     api<IndicatorItem[]>(`/indicators?period=${period}`),
     api<CreditSegments>(`/credit/segments?period=${period}`),
     api<SeriesPoint[]>(`/series/lucro_liquido_ajustado?to=${sel.end}`),
@@ -34,6 +34,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
     api<Bridge>(`/results/bridge?period=${period}`),
     api<AlertItem[]>(`/alerts?period=${period}`),
     api<NoteItem[]>(`/notes?period=${period}`),
+    api<SeriesPoint[]>(`/series/lucro_liquido_ajustado?period_type=ytd&to=${sel.end}`),
+    api<SeriesPoint[]>(`/series/roe_ajustado?period_type=ytd&to=${sel.end}`),
   ]);
 
   const by: Record<string, IndicatorItem> = ind.ok ? Object.fromEntries(ind.data.map((i) => [i.code, i])) : {};
@@ -92,7 +94,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
               <p className="muted">Resultado gerencial divulgado pelo RI · até {sel.label}</p></div>
           </header>
           {profit.ok && roe.ok
-            ? <EvolutionChart profit={profit.data} roe={roe.data} selectedEnd={sel.end} />
+            ? <EvolutionChart profit={profit.data} roe={roe.data} selectedEnd={sel.end}
+                              profitYtd={profitYtd.ok ? profitYtd.data : []} roeYtd={roeYtd.ok ? roeYtd.data : []} />
             : <ErrorState message={(!profit.ok ? profit.error : !roe.ok ? roe.error : "")} />}
         </article>
         <article className="card">

@@ -297,3 +297,5 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 .neg { color: var(--bad) !important; }
 .headline .pos { color: #0B6B3A !important; }
 .headline .neg { color: #A1121A !important; }
+.ytd-change { margin: 10px 0 0; font-size: 14px; color: var(--ink-2); }
+.ytd-change strong { font-size: 16px; }
