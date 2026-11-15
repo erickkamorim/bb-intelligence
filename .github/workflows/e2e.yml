@@ -1,0 +1,67 @@
+name: e2e
+# Fluxo ponta a ponta: Neon -> API -> Next.js. Sobe os dois serviços e verifica as páginas renderizadas.
+on:
+  workflow_dispatch: {}
+  pull_request: { paths: ["frontend/**", "backend/app/**"] }
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BB_API_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: API
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf 127.0.0.1:8000/api/v1/health && break; sleep 1; done
+      - name: Frontend
+        working-directory: frontend
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+          nohup npm start -- -p 3000 > /tmp/web.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf -o /dev/null 127.0.0.1:3000 && break; sleep 1; done
+      - name: Verificar páginas
+        run: |
+          set -e
+          check() { echo "== $1 deve conter: $2"; curl -sf "127.0.0.1:3000$1" | grep -o "$2" | head -1 | grep -q . && echo OK || (echo FALHOU; exit 1); }
+          check "/" "Visão Executiva"
+          check "/" "Lucro líquido ajustado"
+          check "/" "R\$ 1,27 bi"
+          check "/" "Projeto independente, não oficial"
+          check "/?period=2026Q2" "R\$ 3,91 bi"
+          check "/qualidade" "Cobertura por indicador"
+          check "/credito" "Em desenvolvimento"
+          code=$(curl -s -o /dev/null -w "%{http_code}" 127.0.0.1:3000/nao-existe); echo "404 -> $code"; test "$code" = "404"
+      - name: Capturas de tela
+        run: |
+          mkdir -p /tmp/shots && cd /tmp/shots && npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+          cat > shot.mjs <<'JS'
+          import { chromium } from "playwright";
+          const b = await chromium.launch();
+          const shots = [["desktop", 1440, 1000, "/"], ["mobile", 390, 844, "/"], ["qualidade", 1440, 1000, "/qualidade"],
+                         ["desktop-recolhido", 1440, 1000, "/"]];
+          for (const [name, w, h, path] of shots) {
+            const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: w < 500 ? 2 : 1 });
+            await p.goto("http://127.0.0.1:3000" + path, { waitUntil: "networkidle" });
+            if (name === "desktop-recolhido") { await p.click(".collapse-btn"); await p.waitForTimeout(400); }
+            if (w > 900) console.log(name, "largura do menu:", await p.$eval(".sidebar", (e) => e.getBoundingClientRect().width));
+            await p.screenshot({ path: `${name}.png`, fullPage: true });
+            await p.screenshot({ path: `${name}.jpg`, fullPage: true, type: "jpeg", quality: 60 });
+          }
+          await b.close();
+          JS
+          node shot.mjs
+          for f in *.jpg; do echo "@@BEGIN $f"; base64 -w 0 "$f"; echo; echo "@@END $f"; done
+      - uses: actions/upload-artifact@v4
+        with: { name: capturas, path: /tmp/shots/*.png, retention-days: 7 }
+      - if: failure()
+        run: tail -50 /tmp/api.log; tail -80 /tmp/web.log
