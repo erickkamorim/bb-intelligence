@@ -1,21 +1,13 @@
 name: check-vercel
 on: { push: { branches: [check-vercel] } }
 jobs:
-  probe:
+  check:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          python3 - <<'PY'
-          import json, urllib.request, urllib.parse
-          B="https://olinda.bcb.gov.br/olinda/servico/IFDATA/versao/v1/odata"
-          banks={"C0080329":"BB","C0080099":"Itau","C0080075":"Bradesco","C0080185":"Santander","C0080738":"Caixa"}
-          f=" or ".join(f"CodInst eq '{c}'" for c in banks)
-          for m in ["202509","202512","202603","202606"]:
-              url=(f"{B}/IfDataValores(AnoMes=@AnoMes,TipoInstituicao=@TipoInstituicao,Relatorio=@Relatorio)"
-                   f"?@AnoMes={m}&@TipoInstituicao=1&@Relatorio='1'&$format=json&$filter="+urllib.parse.quote(f)+"&$select=CodInst,Conta,NomeColuna,Saldo")
-              v=json.load(urllib.request.urlopen(url,timeout=180))["value"]
-              print("==",m,len(v))
-              for c,b in banks.items():
-                  row={r["NomeColuna"].split("\n")[0].strip():r["Saldo"] for r in v if r["CodInst"]==c}
-                  print(f"  {b:9}", {k:row.get(k) for k in ["Ativo Total","Carteira de Crédito","Patrimônio Líquido","Lucro Líquido","Índice de Basileia"]})
-          PY
+          S=https://bb-intelligence-lilac.vercel.app
+          curl -s -m 90 -o /dev/null https://bb-intelligence-api.onrender.com/api/v1/health || true
+          check() { body=$(curl -sS -m 90 "$S$1"); code=$(curl -s -o /dev/null -w "%{http_code}" -m 90 "$S$1"); echo "== $1 HTTP $code"; for t in "${@:2}"; do echo "$body" | grep -q "$t" && echo "  OK: $t" || echo "  FALTA: $t"; done; }
+          check "/" "Por que o lucro mudou" "Comparar Bancos"
+          check "/pares" "ROE anualizado" "Itaú" "Banco do Brasil"
+          check "/pares?period=2026Q1" "1T26"
