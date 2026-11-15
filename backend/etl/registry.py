@@ -161,17 +161,18 @@ INDICATORS: dict[str, Indicator] = {
     ),
     "roe_ajustado": Indicator(
         code="roe_ajustado", name="RSPL ajustado (ROE)", unit="pct", frequency="quarterly",
-        definition="Retorno sobre PL ajustado, anualizado, conforme metodologia do release do BB.",
+        definition="RSPL anualizado do release: lucro líquido ajustado / PL médio (glossário do release).",
         scope="gerencial", source="ri_bb",
     ),
     "indice_eficiencia": Indicator(
         code="indice_eficiencia", name="Índice de eficiência", unit="pct", frequency="quarterly",
-        definition="Conforme definição do release do BB (verificar se acumulado 12 meses ou trimestral).",
+        definition="Índice de eficiência TRIMESTRAL do release (Tabela 1 / Tabela 35, linha A/B). "
+                   "O release também publica a versão 12 meses, que não é esta série.",
         scope="gerencial", source="ri_bb",
     ),
     "carteira_credito_ampliada": Indicator(
-        code="carteira_credito_ampliada", name="Carteira de crédito ampliada", unit="BRL", frequency="quarterly",
-        definition="Saldo da carteira de crédito ampliada conforme release do BB.",
+        code="carteira_credito_ampliada", name="Carteira de crédito expandida", unit="BRL", frequency="quarterly",
+        definition="Carteira de crédito expandida do release: carteira classificada + TVMs privados e garantias.",
         scope="gerencial", source="ri_bb",
     ),
     "carteira_pf": Indicator("carteira_pf", "Carteira — Pessoas Físicas", "BRL", "quarterly",
@@ -183,6 +184,13 @@ INDICATORS: dict[str, Indicator] = {
     "carteira_agro": Indicator("carteira_agro", "Carteira — Agronegócio", "BRL", "quarterly",
                                "Segmento da carteira ampliada, conforme release.", "gerencial", "ri_bb",
                                tags=("segmento",)),
+    "lucro_liquido_contabil_ri": Indicator(
+        code="lucro_liquido_contabil_ri", name="Lucro líquido contábil (release do RI)", unit="BRL",
+        frequency="quarterly",
+        definition="Lucro líquido contábil como apresentado no release. Difere da DRE enviada à CVM "
+                   "(conta 3.11/3.11.01); guardado separadamente para conciliação.",
+        scope="gerencial", source="ri_bb",
+    ),
     "inad_90": Indicator("inad_90", "Inadimplência +90 dias", "pct", "quarterly",
                          "Operações vencidas há mais de 90 dias / carteira classificada, conforme release.",
                          "gerencial", "ri_bb"),
