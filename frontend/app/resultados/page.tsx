@@ -57,13 +57,13 @@ export default async function ResultadosPage() {
         <article className="card">
           <header className="card-head"><IconBars /><div><h2>Lucro líquido consolidado (CVM)</h2>
             <p className="muted">Trimestre isolado · DRE consolidada, conta 3.11</p></div></header>
-          <BarSeries points={data[2]} axisTitle="R$ bilhões" kind="brl_bi" csvName="lucro-consolidado-cvm" />
+          <BarSeries points={data[2]} axisTitle="R$ bilhões" kind="brl_bi" csvName="lucro-consolidado-cvm" tone="sign" />
           <p className="chart-note">O 4T25 é derivado: exercício da DFP 2025 menos o acumulado de 9 meses do ITR.</p>
         </article>
         <article className="card">
           <header className="card-head"><IconBars /><div><h2>Índice de eficiência (RI)</h2>
             <p className="muted">Trimestral · quanto menor, mais eficiente</p></div></header>
-          <BarSeries points={data[5]} axisTitle="% (despesas administrativas / receitas)" kind="pct" csvName="indice-eficiencia" />
+          <BarSeries points={data[5]} axisTitle="% (despesas administrativas / receitas)" kind="pct" csvName="indice-eficiencia" tone="up_bad" />
         </article>
       </section>
 
@@ -85,7 +85,8 @@ export default async function ResultadosPage() {
                   {COLS.map((c) => {
                     const p = byCode[c.code].get(e);
                     return (
-                      <td key={c.code} className="num" title={p ? `${p.source ?? ""} ${p.locator ?? ""}`.trim() : undefined}>
+                      <td key={c.code} className={`num${p && c.code !== "indice_eficiencia" ? (p.value > 0 ? " pos" : p.value < 0 ? " neg" : "") : ""}`}
+                          title={p ? `${p.source ?? ""} ${p.locator ?? ""}`.trim() : undefined}>
                         {p ? c.fmt(p.value) : "—"}{p?.derivation ? "*" : ""}
                       </td>
                     );

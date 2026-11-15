@@ -72,7 +72,7 @@ export default async function CreditoPage({ searchParams }: { searchParams: Prom
             <p className="muted">INAD+90d · carteira classificada</p></div></header>
           {inad.ok ? (
             <BarSeries points={inad.data} axisTitle="% da carteira classificada" kind="pct" digits={2}
-                       csvName="inad-90" selectedEnd={sel.end} />
+                       csvName="inad-90" selectedEnd={sel.end} tone="up_bad" />
           ) : <ErrorState message={inad.error} />}
         </article>
       </section>
@@ -95,7 +95,7 @@ export default async function CreditoPage({ searchParams }: { searchParams: Prom
                       <td key={s.code} className="num">
                         {v !== undefined ? brl(v) : "—"}
                         {v !== undefined && pv ? (
-                          <span className="code">{v >= pv ? "+" : ""}{number((v / pv - 1) * 100, 1)}% vs {quarterLabel(prevEnd!)}</span>
+                          <span className={`code ${v > pv ? "pos" : v < pv ? "neg" : ""}`}>{v >= pv ? "+" : ""}{number((v / pv - 1) * 100, 1)}% vs {quarterLabel(prevEnd!)}</span>
                         ) : null}
                       </td>
                     );

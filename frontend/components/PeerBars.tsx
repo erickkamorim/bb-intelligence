@@ -1,5 +1,5 @@
 import { number } from "@/lib/format";
-import { C } from "@/lib/theme";
+import { C, toneColor } from "@/lib/theme";
 
 export interface PeerBank {
   cod_inst: string; name: string; is_bb: boolean;
@@ -21,6 +21,8 @@ const fmt = (v: number, kind: Kind) =>
 
 /** Barras horizontais, uma por banco, ordenadas; o BB em amarelo e identificado pelo nome (não só pela cor). */
 export function PeerBars({ banks, k, kind }: { banks: PeerBank[]; k: Key; kind: Kind }) {
+  // Resultados (ROE, lucro, crescimento) seguem a regra verde/vermelho; saldos (ativo, carteira, capital) não.
+  const signed = k === "roe_anualizado" || k === "lucro_trimestre" || k === "carteira_yoy_pct";
   const rows = banks.filter((b) => b[k] !== null).sort((a, b) => (b[k] as number) - (a[k] as number));
   if (!rows.length) return <p className="muted">Sem dado para o período.</p>;
   const vals = rows.map((r) => r[k] as number);
@@ -39,7 +41,9 @@ export function PeerBars({ banks, k, kind }: { banks: PeerBank[]; k: Key; kind: 
             <text x={LBL - 10} y={y + 15} textAnchor="end" className={r.is_bb ? "bridge-total" : "tick bridge-lbl"}>
               {i + 1}º {r.name}
             </text>
-            <rect x={x0} y={y + 3} width={w} height={ROW - 12} rx={4} fill={r.is_bb ? C.highlight : C.series} />
+            <rect x={x0} y={y + 3} width={w} height={ROW - 12} rx={4}
+                  fill={signed ? toneColor(v) : r.is_bb ? C.highlight : C.series}
+                  stroke={signed && r.is_bb ? C.highlight : "none"} strokeWidth={2.5} />
             <text x={Math.max(x(v), x(0)) + 6} y={y + 15} className={r.is_bb ? "value-label" : "tick bridge-val"}>
               {fmt(v, kind)}
             </text>

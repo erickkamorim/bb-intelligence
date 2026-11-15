@@ -71,7 +71,7 @@ export default async function MercadoPage() {
         </article>
         <article className="card kpi">
           <h2 className="kpi-title">Juro real ex-post</h2>
-          <p className="kpi-value">{real !== null ? pct(real, 2) : "Sem dado"}</p>
+          <p className={`kpi-value${real !== null ? (real > 0 ? " pos" : real < 0 ? " neg" : "") : ""}`}>{real !== null ? pct(real, 2) : "Sem dado"}</p>
           <p className="kpi-source">Cálculo próprio: (1 + Selic) / (1 + IPCA 12m) − 1. Indicativo, não oficial.</p>
         </article>
       </section>

@@ -48,8 +48,8 @@ export function BridgeChart({ data, toLabel }: { data: Bridge; toLabel: string }
   const s = niceScale(hi * 1.05, lo);
   const W = 640, LBL = 150, PADR = 92, ROW = 30, TOP = 26, H = TOP + rows.length * ROW + 24;
   const x = (v: number) => LBL + ((v / 1e9 - s.min) / (s.max - s.min)) * (W - LBL - PADR);
-  const color = (k: Row["kind"], i: number) =>
-    k === "total" ? (i === rows.length - 1 ? C.highlight : C.total) : k === "up" ? C.up : C.down;
+  const color = (k: Row["kind"], v: number) =>
+    k === "total" ? (v >= 0 ? C.pos : C.neg) : k === "up" ? C.pos : C.neg;
   const h = hover !== null ? rows[hover] : null;
 
   return (
@@ -72,7 +72,8 @@ export function BridgeChart({ data, toLabel }: { data: Bridge; toLabel: string }
             return (
               <g key={r.label}>
                 <text x={LBL - 10} y={y + 15} textAnchor="end" className={r.kind === "total" ? "bridge-total" : "tick bridge-lbl"}>{r.label}</text>
-                <rect x={x0} y={y + 4} width={w} height={ROW - 10} rx={3} fill={color(r.kind, i)} />
+                <rect x={x0} y={y + 4} width={w} height={ROW - 10} rx={3} fill={color(r.kind, r.b)}
+                      stroke={i === rows.length - 1 ? C.highlight : "none"} strokeWidth={2} />
                 {next && next.kind !== "total" && (
                   <line x1={x(r.b)} x2={x(r.b)} y1={y + ROW - 6} y2={y + ROW + 4} stroke={C.muted} />
                 )}
@@ -96,7 +97,7 @@ export function BridgeChart({ data, toLabel }: { data: Bridge; toLabel: string }
         )}
       </div>
       <p className="chart-note">
-        Variação de cada linha da DRE gerencial entre {fromLabel} e {toLabel}. Verde soma ao lucro, vermelho tira
+        Variação de cada linha da DRE gerencial entre {fromLabel} e {toLabel}. Verde = efeito positivo no lucro, vermelho = negativo
         (o sinal está sempre no rótulo).{data.closes ? " A soma fecha com o lucro divulgado." : ` Diferença de arredondamento: ${bi(data.residual ?? 0, true)}.`}
         {data.source ? ` Fonte: ${sourceLine(data.source)}.` : ""}
       </p>

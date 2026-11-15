@@ -19,19 +19,26 @@ const PHRASE: Record<string, string> = {
 };
 const phrase = (st: { code: string; label: string }) => PHRASE[st.code] ?? st.label;
 
-/** Frase-resumo montada só com números carregados (sem adjetivos, sem previsão). */
+export type Seg = { text: string; tone?: "pos" | "neg" };
+
+/** Frase-resumo montada só com números carregados (sem adjetivos, sem previsão). Números positivos em verde, negativos em vermelho. */
 export function headline(lucro: { value?: number; qoq?: { value: number } | null } | undefined, bridge: Bridge | null,
-                         label: string): string | null {
+                         label: string): Seg[] | null {
   if (lucro?.value === undefined) return null;
-  let s = `No ${label}, o lucro líquido ajustado foi de ${bi(lucro.value)}`;
-  if (lucro.qoq) s += ` (${lucro.qoq.value > 0 ? "+" : ""}${number(lucro.qoq.value, 1)}% no trimestre)`;
+  const segs: Seg[] = [{ text: `No ${label}, o lucro líquido ajustado foi de ` },
+    { text: bi(lucro.value), tone: lucro.value >= 0 ? "pos" : "neg" }];
+  if (lucro.qoq) {
+    segs.push({ text: " (" }, { text: `${lucro.qoq.value > 0 ? "+" : ""}${number(lucro.qoq.value, 1)}%`,
+      tone: lucro.qoq.value >= 0 ? "pos" : "neg" }, { text: " no trimestre)" });
+  }
   if (bridge?.status === "ok" && bridge.steps?.length) {
     const neg = [...bridge.steps].sort((a, b) => a.delta - b.delta)[0];
     const pos = [...bridge.steps].sort((a, b) => b.delta - a.delta)[0];
-    if (neg.delta < 0) s += `. O que mais pesou: ${phrase(neg)} (−${bi(neg.delta)})`;
-    if (pos.delta > 0) s += `; o que mais ajudou: ${phrase(pos)} (+${bi(pos.delta)})`;
+    if (neg.delta < 0) segs.push({ text: `. O que mais pesou: ${phrase(neg)} (` }, { text: `−${bi(neg.delta)}`, tone: "neg" }, { text: ")" });
+    if (pos.delta > 0) segs.push({ text: `; o que mais ajudou: ${phrase(pos)} (` }, { text: `+${bi(pos.delta)}`, tone: "pos" }, { text: ")" });
   }
-  return s + ".";
+  segs.push({ text: "." });
+  return segs;
 }
 
 export function AlertsPanel({ items }: { items: AlertItem[] }) {

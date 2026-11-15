@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { number, quarterLabel, sourceLine } from "@/lib/format";
 import type { SeriesPoint } from "@/lib/types";
 import { IconDownload } from "./Icons";
-import { C } from "@/lib/theme";
+import { C, toneColor } from "@/lib/theme";
 
 const BAR = C.series;
 const BAR_SEL = C.highlight;
@@ -146,7 +146,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
             return (
               <g key={c.key}>
                 <path d={`M${x},${yP(0)} V${y + r} Q${x},${y} ${x + r},${y} H${x + barW - r} Q${x + barW},${y} ${x + barW},${y + r} V${yP(0)} Z`}
-                      fill={sel ? BAR_SEL : BAR} />
+                      fill={toneColor(c.profit)} stroke={sel ? BAR_SEL : "none"} strokeWidth={2.5} />
                 {(sel || i === cols.length - 1) && (
                   <text x={cx(i)} y={y - 6} textAnchor="middle" className="value-label">{number(v, 2)}</text>
                 )}
@@ -170,7 +170,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
               ) : (
                 <g key={`rd${c.key}`}>
                   <circle cx={cx(i)} cy={yR(c.roe)} r={6} fill={C.surface} />
-                  <circle cx={cx(i)} cy={yR(c.roe)} r={4} fill={LINE} />
+                  <circle cx={cx(i)} cy={yR(c.roe)} r={4} fill={toneColor(c.roe)} />
                   {i === cols.length - 1 && (
                     <text x={cx(i)} y={yR(c.roe) + 20} textAnchor="middle" className="value-label">{number(c.roe, 1)}%</text>
                   )}
@@ -205,7 +205,7 @@ export function EvolutionChart({ profit, roe, selectedEnd }: {
 
       <p className="chart-note">
         {mode === "q"
-          ? "Trimestre selecionado em amarelo. Lucro e RSPL em gráficos separados, cada um com sua escala."
+          ? "Verde = resultado positivo, vermelho = negativo; trimestre selecionado com contorno amarelo. Lucro e RSPL em gráficos separados, cada um com sua escala."
           : "Soma dos quatro trimestres; anos com trimestre faltando aparecem como incompletos. RSPL anual não é a soma dos trimestres e não é exibido."}
       </p>
       <details className="table-view">

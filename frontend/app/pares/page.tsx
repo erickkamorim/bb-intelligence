@@ -89,7 +89,11 @@ export default async function ParesPage({ searchParams }: { searchParams: Promis
                 return (
                   <tr key={b.cod_inst} className={b.is_bb ? "row-bb" : undefined}>
                     <th scope="row">{b.name}</th>
-                    {histEnds.map((e) => <td key={e} className="num">{m.has(e) ? `${number(m.get(e)!, 1)}%` : "—"}</td>)}
+                    {histEnds.map((e) => {
+                      const v = m.get(e);
+                      return <td key={e} className={`num${v !== undefined ? (v > 0 ? " pos" : v < 0 ? " neg" : "") : ""}`}>
+                        {v !== undefined ? `${number(v, 1)}%` : "—"}</td>;
+                    })}
                   </tr>
                 );
               })}
@@ -98,7 +102,8 @@ export default async function ParesPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="method">
           <h3>Como ler</h3>
-          <ul>{(d.notes ?? []).map((n) => <li key={n}>{n}</li>)}</ul>
+          <ul>{(d.notes ?? []).map((n) => <li key={n}>{n}</li>)}
+            <li>Cores: verde = resultado positivo, vermelho = negativo. O Banco do Brasil aparece com nome em negrito e contorno amarelo.</li></ul>
           {d.source && <p className="alert-src">Fonte: {sourceLine(d.source)}</p>}
         </div>
       </article>
