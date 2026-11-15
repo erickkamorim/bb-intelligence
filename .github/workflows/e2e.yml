@@ -54,10 +54,12 @@ jobs:
             await p.goto("http://127.0.0.1:3000" + path, { waitUntil: "networkidle" });
             if (name === "desktop-recolhido") await p.click(".collapse-btn");
             await p.screenshot({ path: `${name}.png`, fullPage: true });
+            await p.screenshot({ path: `${name}.jpg`, fullPage: true, type: "jpeg", quality: 60 });
           }
           await b.close();
           JS
           node shot.mjs
+          for f in *.jpg; do echo "@@BEGIN $f"; base64 -w 0 "$f"; echo; echo "@@END $f"; done
       - uses: actions/upload-artifact@v4
         with: { name: capturas, path: /tmp/shots/*.png, retention-days: 7 }
       - if: failure()
