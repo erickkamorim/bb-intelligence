@@ -1,0 +1,13 @@
+name: check-render
+on: { push: { branches: [check-render] } }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          B=https://bb-intelligence-api.onrender.com/api/v1
+          for i in $(seq 1 12); do c=$(curl -s -o /dev/null -w "%{http_code}" -m 60 $B/health); echo "health tentativa $i: $c"; [ "$c" = 200 ] && break; sleep 10; done
+          for p in health periods "indicators?period=2026Q3" "credit/segments?period=2026Q3" data-quality; do
+            echo "=== $p"; curl -sS -m 60 -w "\nHTTP %{http_code}\n" "$B/$p" | cut -c1-400
+          done
+          echo "=== CORS"; curl -sS -m 60 -o /dev/null -D - -H "Origin: https://exemplo.vercel.app" "$B/health" | grep -i "access-control" || echo "sem cabeçalho CORS para origem não liberada (esperado)"
