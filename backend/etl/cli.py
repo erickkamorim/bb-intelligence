@@ -142,7 +142,8 @@ def cmd_sgs_load(args) -> int:
     url = f"{sgs.BASE.format(code=ind.sgs_code)}?formato=json"  # janelas exatas ficam em `period`
     now = datetime.now(timezone.utc)
     with _session() as s, etl_run(s, f"sgs_{ind.code}") as run:
-        doc = get_or_create_document(s, "bcb_sgs", "SGS", url, digest, now, period=f"{start}..{end}")
+        doc = get_or_create_document(s, "bcb_sgs", "SGS", url, digest, now,
+                                     locator=f"dataInicial={start:%d/%m/%Y}; dataFinal={end:%d/%m/%Y}")
         rows = [ObsIn(ind.code, None, p.date, ind.sgs_period_type or "daily", p.value) for p in pts]
         ins, rev = upsert_observations(s, doc, rows)
         run.rows_inserted, run.rows_updated = ins, rev
@@ -173,6 +174,28 @@ def cmd_ri_load(args) -> int:
         run.rows_inserted, run.rows_updated = total_i, total_r
         s.commit()
     print(f"OK: {total_i} inseridas, {total_r} revisadas")
+    return 0
+
+
+def cmd_show(args) -> int:
+    from sqlalchemy import select
+
+    from app.db.models import IndicatorModel, Observation
+    with _session() as s:
+        ind = s.scalar(select(IndicatorModel).where(IndicatorModel.code == args.indicator))
+        if ind is None:
+            print("Indicador desconhecido")
+            return 1
+        q = (select(Observation).where(Observation.indicator_id == ind.id,
+                                       Observation.period_type == args.period_type)
+             .order_by(Observation.period_end, Observation.revision))
+        rows = s.scalars(q).all()
+        print(f"{ind.name} [{ind.unit}] — {args.period_type}")
+        for o in rows[-args.last:]:
+            v = float(o.value)
+            fmt = f"R$ {v / 1e9:,.2f} bi" if ind.unit == "BRL" else f"{v:,.2f}"
+            tag = f"  ({o.derivation})" if o.derivation else ""
+            print(f"  {o.period_end}  rev{o.revision}  {fmt}{tag}")
     return 0
 
 
@@ -227,6 +250,12 @@ def build_parser() -> argparse.ArgumentParser:
     rl = r.add_parser("load")
     rl.add_argument("--file", required=True)
     rl.set_defaults(func=cmd_ri_load)
+
+    sh = sub.add_parser("show")
+    sh.add_argument("--indicator", required=True)
+    sh.add_argument("--period-type", default="quarter")
+    sh.add_argument("--last", type=int, default=12)
+    sh.set_defaults(func=cmd_show)
 
     sub.add_parser("quality").set_defaults(func=cmd_quality)
     return p
