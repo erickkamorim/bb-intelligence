@@ -5,7 +5,7 @@ import { downloadCsv, niceScale, quarterEnds } from "@/lib/chart";
 import { number, pct, quarterLabel, sourceLine } from "@/lib/format";
 import type { SeriesPoint } from "@/lib/types";
 import { IconDownload } from "./Icons";
-import { C } from "@/lib/theme";
+import { C, toneColor } from "@/lib/theme";
 
 const BAR = C.series;
 const BAR_SEL = C.highlight;
@@ -23,13 +23,15 @@ function formatters(kind: Kind, digits: number) {
   return { scale: 1, fmt: (v: number) => pct(v, digits), tick: (v: number) => `${number(v, Number.isInteger(v) ? 0 : 1)}%` };
 }
 
-export function BarSeries({ points, axisTitle, kind, digits = 1, csvName, selectedEnd }: {
+export function BarSeries({ points, axisTitle, kind, digits = 1, csvName, selectedEnd, tone }: {
   points: SeriesPoint[];
   axisTitle: string;
   kind: Kind;
   digits?: number;
   csvName: string;
   selectedEnd?: string;
+  /** "sign": verde se positivo / vermelho se negativo. "up_bad"/"up_good": cor pela variação vs trimestre anterior. */
+  tone?: "sign" | "up_good" | "up_bad";
 }) {
   const { scale, fmt, tick: tickFmt } = formatters(kind, digits);
   const [hover, setHover] = useState<number | null>(null);
@@ -50,6 +52,12 @@ export function BarSeries({ points, axisTitle, kind, digits = 1, csvName, select
   const y = (v: number) => TOP + H1 - ((v - s.min) / (s.max - s.min)) * H1;
   const cx = (i: number) => PADL + band * i + band / 2;
   const h = hover !== null ? cols[hover] : null;
+  const barColor = (i: number, v: number) => {
+    if (!tone) return cols[i].end === selectedEnd ? BAR_SEL : BAR;
+    if (tone === "sign") return toneColor(v);
+    const prev = cols.slice(0, i).reverse().find((c) => c.v !== undefined);
+    return prev ? toneColor(v - prev.v!, tone === "up_good") : C.muted;
+  };
 
   return (
     <div className="chart">
@@ -80,7 +88,7 @@ export function BarSeries({ points, axisTitle, kind, digits = 1, csvName, select
               : `M${x},${top} V${bot - r} Q${x},${bot} ${x + r},${bot} H${x + barW - r} Q${x + barW},${bot} ${x + barW},${bot - r} V${top} Z`;
             return (
               <g key={c.end}>
-                <path d={d} fill={sel ? BAR_SEL : BAR} />
+                <path d={d} fill={barColor(i, c.v)} stroke={sel && tone ? BAR_SEL : "none"} strokeWidth={2.5} />
                 {(sel || i === cols.length - 1) && (
                   <text x={cx(i)} y={(c.v >= 0 ? top : bot + 14) - 6} textAnchor="middle" className="value-label">{fmt(c.v)}</text>
                 )}
@@ -105,6 +113,13 @@ export function BarSeries({ points, axisTitle, kind, digits = 1, csvName, select
           </div>
         )}
       </div>
+      {tone && (
+        <p className="chart-note">
+          {tone === "sign" ? "Verde = resultado positivo, vermelho = negativo."
+            : "Verde = melhorou frente ao trimestre anterior, vermelho = piorou" + (tone === "up_bad" ? " (aqui, subir é pior)." : ".")}
+          {selectedEnd ? " Trimestre selecionado com contorno amarelo." : ""}
+        </p>
+      )}
       <details className="table-view">
         <summary>Ver dados em tabela</summary>
         <table>

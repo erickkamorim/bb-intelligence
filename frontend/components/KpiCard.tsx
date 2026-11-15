@@ -18,6 +18,10 @@ function DeltaChip({ d, label, higherIsBetter = true }: { d: Delta; label: strin
   );
 }
 
+// Indicadores que são "resultado" (lucro/ROE): o próprio valor é verde se positivo, vermelho se negativo.
+const RESULT = new Set(["lucro_liquido_ajustado", "lucro_liquido_contabil", "lucro_liquido_controladores",
+  "lucro_liquido_contabil_ri", "roe_ajustado"]);
+
 export function KpiCard({ item, icon, higherIsBetter = true, note }: {
   item: IndicatorItem | undefined; icon: ReactNode; higherIsBetter?: boolean; note?: string;
 }) {
@@ -31,7 +35,8 @@ export function KpiCard({ item, icon, higherIsBetter = true, note }: {
       </header>
       {ok ? (
         <>
-          <p className="kpi-value">{value(item.value!, item.unit)}</p>
+          <p className={`kpi-value${RESULT.has(item.code) ? (item.value! > 0 ? " pos" : item.value! < 0 ? " neg" : "") : ""}`}>
+            {value(item.value!, item.unit)}</p>
           <div className="kpi-deltas">
             {item.yoy && <DeltaChip d={item.yoy} label="a/a" higherIsBetter={higherIsBetter} />}
             {item.qoq && <DeltaChip d={item.qoq} label="t/t" higherIsBetter={higherIsBetter} />}

@@ -291,3 +291,9 @@ h1, h2, h3 { margin: 0; letter-spacing: -0.01em; }
 }
 .data-table tr.row-bb th, .data-table tr.row-bb td { background: rgba(255,223,0,.08); color: var(--ink); font-weight: 700; }
 .last-update .freq { display: block; margin-top: 2px; font-size: 11px; color: var(--muted); }
+
+/* Regra de cor de resultado: positivo verde, negativo vermelho */
+.pos { color: var(--good) !important; }
+.neg { color: var(--bad) !important; }
+.headline .pos { color: #0B6B3A !important; }
+.headline .neg { color: #A1121A !important; }

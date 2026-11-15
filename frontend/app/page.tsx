@@ -53,7 +53,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ p
       {head && (
         <section className="headline" aria-label="Resumo do trimestre">
           <IconSpark />
-          <p>{head}</p>
+          <p>{head.map((sg, i) => sg.tone ? <strong key={i} className={sg.tone}>{sg.text}</strong> : <span key={i}>{sg.text}</span>)}</p>
         </section>
       )}
 
