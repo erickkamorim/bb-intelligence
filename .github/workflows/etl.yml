@@ -35,4 +35,9 @@ jobs:
           python -m etl sgs load --indicator ipca_mensal --start ${{ inputs.sgs_start }}
       - name: Qualidade
         if: always()
-        run: python -m etl quality
+        run: |
+          python -m etl quality
+          python -m etl show --indicator lucro_liquido_contabil
+          python -m etl show --indicator lucro_liquido_controladores
+          python -m etl show --indicator patrimonio_liquido --period-type instant
+          python -m etl show --indicator selic_meta --period-type daily --last 3
