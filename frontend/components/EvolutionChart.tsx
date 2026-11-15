@@ -79,7 +79,7 @@ export function EvolutionChart({ profit, roe, profitYtd = [], roeYtd = [], selec
         <div className="chart-toolbar">
           <div className="segmented" role="group" aria-label="Agregação">
             <button aria-pressed={mode === "q"} onClick={() => setMode("q")}>Trimestral</button>
-            <button aria-pressed={mode === "y"} onClick={() => setMode("y")}>Acumulado no ano</button>
+            <button aria-pressed={mode === "y"} onClick={() => setMode("y")}>Acumulado</button>
           </div>
         </div>
         <p className="muted">Sem dados {mode === "q" ? "trimestrais" : "acumulados no ano"} até este período.</p>
@@ -139,13 +139,13 @@ export function EvolutionChart({ profit, roe, profitYtd = [], roeYtd = [], selec
       <div className="chart-toolbar">
         <div className="segmented" role="group" aria-label="Agregação">
           <button aria-pressed={mode === "q"} onClick={() => setMode("q")}>Trimestral</button>
-          <button aria-pressed={mode === "y"} onClick={() => setMode("y")}>Acumulado no ano</button>
+          <button aria-pressed={mode === "y"} onClick={() => setMode("y")}>Acumulado</button>
         </div>
         <button className="btn-ghost" onClick={csv}><IconDownload width={16} height={16} />CSV</button>
       </div>
 
       <div className="chart-canvas" ref={canvas}>
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" width="100%"
+        <svg viewBox={`0 0 ${W} ${H}`} role="img" width="100%" style={{ minWidth: cols.length > 4 ? 460 : 0 }}
              aria-label={`Lucro líquido ajustado ${mode === "q" ? "por trimestre" : "acumulado no ano"}${showRoe ? " e RSPL" : ""}. Valores na tabela abaixo.`}>
           <text x={PADL} y={10} className="axis-title">Lucro líquido ajustado (R$ bi)</text>
           {pTicks.map((t) => (

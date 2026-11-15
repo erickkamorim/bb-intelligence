@@ -71,7 +71,7 @@ jobs:
             await p.goto("http://127.0.0.1:3000" + path, { waitUntil: "networkidle" });
             if (name === "desktop-recolhido") { await p.click(".collapse-btn"); await p.waitForTimeout(400); }
             if (name === "mobile-acumulado") {
-              await p.getByRole("button", { name: "Acumulado no ano" }).click(); await p.waitForTimeout(400);
+              await p.getByRole("button", { name: "Acumulado", exact: true }).click(); await p.waitForTimeout(400);
               const el = await p.$(".row-main + .row-main .card");
               await el.screenshot({ path: `${name}.png` }); await el.screenshot({ path: `${name}.jpg`, type: "jpeg", quality: 60 });
               continue;
