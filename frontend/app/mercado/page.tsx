@@ -80,15 +80,13 @@ export default async function MercadoPage() {
         <article className="card">
           <header className="card-head"><IconTrend /><div><h2>Meta Selic</h2>
             <p className="muted">% ao ano · definida pelo Copom</p></div></header>
-          {selic.ok ? <LineSeries points={sel} axisTitle="% a.a." csvName="selic-meta"
-                                  fmt={(v) => `${number(v, Number.isInteger(v) ? 0 : 2)}%`} />
+          {selic.ok ? <LineSeries points={sel} axisTitle="% a.a." csvName="selic-meta" digits={2} />
             : <ErrorState message={selic.error} />}
         </article>
         <article className="card">
           <header className="card-head"><IconTrend /><div><h2>IPCA acumulado em 12 meses</h2>
             <p className="muted">% · calculado a partir da variação mensal</p></div></header>
-          {ipca.ok ? <LineSeries points={ip} axisTitle="%" csvName="ipca-12m"
-                                 fmt={(v) => `${number(v, Number.isInteger(v) ? 0 : 1)}%`} />
+          {ipca.ok ? <LineSeries points={ip} axisTitle="%" csvName="ipca-12m" digits={1} />
             : <ErrorState message={ipca.error} />}
         </article>
       </section>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { downloadCsv, niceScale, quarterEnds } from "@/lib/chart";
-import { quarterLabel, sourceLine } from "@/lib/format";
+import { number, pct, quarterLabel, sourceLine } from "@/lib/format";
 import type { SeriesPoint } from "@/lib/types";
 import { IconDownload } from "./Icons";
 
@@ -11,15 +11,26 @@ const BAR_SEL = "#002D5D";
 const GRID = "#E3E7ED";
 
 /** Barras trimestrais de uma única série, com lacunas explícitas ("s/ dado"). */
-export function BarSeries({ points, axisTitle, fmt, tickFmt, csvName, selectedEnd, scale = 1 }: {
+type Kind = "brl_bi" | "pct";
+
+/** Formatação definida aqui (no cliente): funções não podem vir de componentes do servidor. */
+function formatters(kind: Kind, digits: number) {
+  if (kind === "brl_bi") {
+    return { scale: 1e9, fmt: (v: number) => `R$ ${number(v, 2)} bi`,
+             tick: (v: number) => number(v, Number.isInteger(v) ? 0 : 1) };
+  }
+  return { scale: 1, fmt: (v: number) => pct(v, digits), tick: (v: number) => `${number(v, Number.isInteger(v) ? 0 : 1)}%` };
+}
+
+export function BarSeries({ points, axisTitle, kind, digits = 1, csvName, selectedEnd }: {
   points: SeriesPoint[];
   axisTitle: string;
-  fmt: (v: number) => string;        // valor já na unidade do eixo
-  tickFmt: (v: number) => string;
+  kind: Kind;
+  digits?: number;
   csvName: string;
   selectedEnd?: string;
-  scale?: number;                     // divide os valores (ex.: 1e9 para R$ bi)
 }) {
+  const { scale, fmt, tick: tickFmt } = formatters(kind, digits);
   const [hover, setHover] = useState<number | null>(null);
   const canvas = useRef<HTMLDivElement>(null);
   useEffect(() => { if (canvas.current) canvas.current.scrollLeft = canvas.current.scrollWidth; }, []);

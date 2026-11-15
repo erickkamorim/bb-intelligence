@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { downloadCsv, niceScale } from "@/lib/chart";
-import { date } from "@/lib/format";
+import { date, number } from "@/lib/format";
 import { IconDownload } from "./Icons";
 
 const LINE = "#1D5BB0";
@@ -11,13 +11,14 @@ const GRID = "#E3E7ED";
 export interface LinePoint { date: string; value: number }
 
 /** Linha temporal de uma série (diária ou mensal) com cruz de leitura e filtro de janela. */
-export function LineSeries({ points, axisTitle, fmt, csvName, windows = [["1a", 1], ["5a", 5], ["Tudo", 0]] }: {
+export function LineSeries({ points, axisTitle, digits = 2, csvName, windows = [["1a", 1], ["5a", 5], ["Tudo", 0]] }: {
   points: LinePoint[];
   axisTitle: string;
-  fmt: (v: number) => string;
+  digits?: number;                    // valores em %; casas decimais no rótulo
   csvName: string;
   windows?: [string, number][];
 }) {
+  const fmt = (v: number) => `${number(v, Number.isInteger(v) ? 0 : digits)}%`;
   const [years, setYears] = useState<number>(windows[windows.length - 1][1]);
   const [hover, setHover] = useState<number | null>(null);
 

@@ -6,7 +6,7 @@ import { KpiCard } from "@/components/KpiCard";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, ErrorState } from "@/components/States";
 import { api } from "@/lib/api";
-import { brl, number, pct, quarterLabel } from "@/lib/format";
+import { brl, number, quarterLabel } from "@/lib/format";
 import type { CreditSegments, IndicatorItem, PeriodItem, SeriesPoint } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -71,8 +71,8 @@ export default async function CreditoPage({ searchParams }: { searchParams: Prom
           <header className="card-head"><IconAlert /><div><h2>Inadimplência acima de 90 dias</h2>
             <p className="muted">INAD+90d · carteira classificada</p></div></header>
           {inad.ok ? (
-            <BarSeries points={inad.data} axisTitle="% da carteira classificada" csvName="inad-90" selectedEnd={sel.end}
-                       fmt={(v) => pct(v, 2)} tickFmt={(v) => `${number(v, 0)}%`} />
+            <BarSeries points={inad.data} axisTitle="% da carteira classificada" kind="pct" digits={2}
+                       csvName="inad-90" selectedEnd={sel.end} />
           ) : <ErrorState message={inad.error} />}
         </article>
       </section>

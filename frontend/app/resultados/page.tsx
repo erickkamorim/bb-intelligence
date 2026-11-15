@@ -5,7 +5,7 @@ import { KpiCard } from "@/components/KpiCard";
 import { PageHeader } from "@/components/PageHeader";
 import { ErrorState } from "@/components/States";
 import { api } from "@/lib/api";
-import { brl, number, pct, periodCode, quarterLabel } from "@/lib/format";
+import { brl, pct, periodCode, quarterLabel } from "@/lib/format";
 import type { IndicatorItem, SeriesPoint } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -57,15 +57,13 @@ export default async function ResultadosPage() {
         <article className="card">
           <header className="card-head"><IconBars /><div><h2>Lucro líquido consolidado (CVM)</h2>
             <p className="muted">Trimestre isolado · DRE consolidada, conta 3.11</p></div></header>
-          <BarSeries points={data[2]} axisTitle="R$ bilhões" scale={1e9} csvName="lucro-consolidado-cvm"
-                     fmt={(v) => `R$ ${number(v, 2)} bi`} tickFmt={(v) => number(v, Number.isInteger(v) ? 0 : 1)} />
+          <BarSeries points={data[2]} axisTitle="R$ bilhões" kind="brl_bi" csvName="lucro-consolidado-cvm" />
           <p className="chart-note">O 4T25 é derivado: exercício da DFP 2025 menos o acumulado de 9 meses do ITR.</p>
         </article>
         <article className="card">
           <header className="card-head"><IconBars /><div><h2>Índice de eficiência (RI)</h2>
             <p className="muted">Trimestral · quanto menor, mais eficiente</p></div></header>
-          <BarSeries points={data[5]} axisTitle="% (despesas administrativas / receitas)" csvName="indice-eficiencia"
-                     fmt={(v) => pct(v)} tickFmt={(v) => `${number(v, 0)}%`} />
+          <BarSeries points={data[5]} axisTitle="% (despesas administrativas / receitas)" kind="pct" csvName="indice-eficiencia" />
         </article>
       </section>
 
