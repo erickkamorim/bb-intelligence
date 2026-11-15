@@ -4,6 +4,5 @@ __pycache__/
 .pytest_cache/
 data/raw/*
 !data/raw/.gitkeep
-data/manual/ri_bb.csv
 node_modules/
 .next/

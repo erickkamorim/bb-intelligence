@@ -29,6 +29,8 @@ jobs:
         run: for y in ${{ inputs.itr_years }}; do python -m etl cvm load --doc ITR --year $y; done
       - name: DFP e 4º trimestre
         run: for y in ${{ inputs.dfp_years }}; do python -m etl cvm load --doc DFP --year $y && python -m etl cvm derive-q4 --year $y; done
+      - name: Curadoria do RI
+        run: python -m etl ri load --file ../data/manual/ri_bb.csv
       - name: Séries do Banco Central
         run: |
           python -m etl sgs load --indicator selic_meta --start ${{ inputs.sgs_start }}
@@ -40,4 +42,6 @@ jobs:
           python -m etl show --indicator lucro_liquido_contabil
           python -m etl show --indicator lucro_liquido_controladores
           python -m etl show --indicator patrimonio_liquido --period-type instant
+          python -m etl show --indicator lucro_liquido_ajustado
+          python -m etl show --indicator inad_90
           python -m etl show --indicator selic_meta --period-type daily --last 3
