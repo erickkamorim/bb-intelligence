@@ -8,6 +8,6 @@ jobs:
           S=https://bb-intelligence-lilac.vercel.app
           curl -s -m 90 -o /dev/null https://bb-intelligence-api.onrender.com/api/v1/health || true
           check() { body=$(curl -sS -m 90 "$S$1"); code=$(curl -s -o /dev/null -w "%{http_code}" -m 90 "$S$1"); echo "== $1 HTTP $code"; for t in "${@:2}"; do echo "$body" | grep -q "$t" && echo "  OK: $t" || echo "  FALTA: $t"; done; }
-          check "/" "Por que o lucro mudou" "não é tempo real" "kpi-value pos" "class=\"neg\""
+          check "/" "Por que o lucro mudou" "não é tempo real" ">Acumulado<"
           check "/pares" "ROE anualizado" "Itaú" "Banco do Brasil"
           check "/pares?period=2026Q1" "1T26"
