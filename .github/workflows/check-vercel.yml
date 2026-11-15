@@ -11,4 +11,6 @@ jobs:
           check "/" "Visão Executiva" "R\$ 1,27 bi" "13,75%" "Projeto independente, não oficial" "Pessoas Físicas"
           check "/?period=2026Q2" "R\$ 3,91 bi"
           check "/qualidade" "Cobertura por indicador" "selic_meta"
-          check "/credito" "Em desenvolvimento"
+          check "/resultados" "Comparativo trimestral" "R\$ 3,26 bi"
+          check "/credito" "Inadimplência acima de 90 dias" "6,08%"
+          check "/mercado" "Meta Selic" "IPCA acumulado em 12 meses" "Juro real"
