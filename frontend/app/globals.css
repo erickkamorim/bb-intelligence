@@ -316,7 +316,7 @@ h1, h2, .kpi-value, .brand-text, .headline p { font-family: var(--font-display);
 .page-header::before { content: ""; position: absolute; top: 0; bottom: 0; right: 92px; width: 52px; background: var(--cyan);
   opacity: .55; clip-path: polygon(62% 0, 100% 0, 38% 100%, 0 100%); }
 .page-header-text, .page-header-meta { position: relative; z-index: 1; }
-.page-header-meta { margin-right: 96px; }
+.page-header-meta { margin-right: 170px; }
 .page-header h1 { font-weight: 700; font-stretch: normal; letter-spacing: -0.02em; }
 .period-select svg { color: var(--blue); }
 .period-select select { background: var(--surface-2); }
@@ -329,7 +329,7 @@ h1, h2, .kpi-value, .brand-text, .headline p { font-family: var(--font-display);
   clip-path: polygon(40% 0, 100% 0, 100% 100%, 0 100%); }
 .headline svg, .headline p { position: relative; z-index: 1; }
 .headline svg { color: var(--yellow); }
-.headline p { max-width: calc(100% - 200px); }
+.headline p { max-width: calc(100% - 280px); }
 .headline strong { border-radius: 8px; padding: 0 6px; white-space: nowrap; }
 .headline .pos { background: var(--good-bg); color: var(--good) !important; }
 .headline .neg { background: var(--bad-bg); color: var(--bad) !important; }
@@ -349,6 +349,6 @@ h1, h2, .kpi-value, .brand-text, .headline p { font-family: var(--font-display);
   .page-header-meta { margin-right: 0; }
   .headline::before { display: none; }
   .headline::after { width: 90px; right: -30px; }
-  .headline p { max-width: calc(100% - 50px); }
+  .headline p { max-width: calc(100% - 66px); }
 }
 @media (max-width: 520px) { .headline { font-size: 16px; padding: 18px; } }
