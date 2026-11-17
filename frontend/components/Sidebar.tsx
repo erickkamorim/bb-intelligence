@@ -19,6 +19,18 @@ const NAV = [
   { href: "/qualidade", label: "Qualidade dos Dados", Icon: IconDatabase },
 ];
 
+/** Símbolo próprio do projeto: três barras subindo num quadrado amarelo. */
+function BrandMark({ size = 38 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 42 42" aria-hidden="true" focusable="false">
+      <rect width="42" height="42" rx="12" fill="#FFE14D" />
+      <rect x="9" y="22" width="6" height="11" rx="2" fill="#1B2696" />
+      <rect x="18" y="15" width="6" height="18" rx="2" fill="#2B3FD6" />
+      <rect x="27" y="9" width="6" height="24" rx="2" fill="#1B2696" />
+    </svg>
+  );
+}
+
 export function Sidebar() {
   const path = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -62,6 +74,7 @@ export function Sidebar() {
                 aria-controls="sidebar">
           <IconMenu />
         </button>
+        <BrandMark size={30} />
         <span className="brand-text"><strong>BB</strong> Intelligence</span>
       </div>
       {open && <div className="scrim" onClick={() => setOpen(false)} aria-hidden="true" />}
@@ -69,7 +82,7 @@ export function Sidebar() {
              aria-label="Navegação principal">
         <div className="sidebar-top">
           <Link href="/" className="brand" aria-label="BB Intelligence — início">
-            <span className="brand-mark" aria-hidden="true">BI</span>
+            <span className="brand-mark" aria-hidden="true"><BrandMark /></span>
             <span className="brand-text"><strong>BB</strong> Intelligence</span>
           </Link>
           <button className="iconbtn only-mobile" onClick={() => setOpen(false)} aria-label="Fechar menu">
