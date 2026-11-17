@@ -1,19 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lexend } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
+const lexend = Lexend({ subsets: ["latin"], display: "swap", weight: ["500", "600", "700"], variable: "--font-lexend" });
 
 export const metadata: Metadata = {
   title: { default: "BB Intelligence", template: "%s · BB Intelligence" },
   description: "Plataforma independente de inteligência financeira sobre o Banco do Brasil, com fontes públicas auditáveis.",
 };
-export const viewport: Viewport = { themeColor: "#061B3A" };
+export const viewport: Viewport = { themeColor: "#1B2696" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="pt-BR" className={`${inter.variable} ${lexend.variable}`}>
       <body>
         <a href="#conteudo" className="skip-link">Pular para o conteúdo</a>
         <div className="shell">
